@@ -1,0 +1,31 @@
+{
+  "group": "cost",
+  "kind": "cost",
+  "description": "Coste por entrada aprobada = round_half_up(minutos × tarifa / 60, 2) en decimal exacto (tarifa con 4 decimales, EUR). Total = suma de costes por entrada. Tarifa congelada (snapshot) en cada entrada. P-10 y P-11 siguen pendientes de Finanzas: estos casos fijan solo la aritmética.",
+  "cases": [
+    { "id": "COST-01", "title": "90 min a 40 €/h (AT-09)", "refs": ["AT-09", "RF-21"], "rationale": "90 × 40 / 60 = 60,00.",
+      "input": { "entries": [{ "minutes": 90, "rate": "40.0000" }] }, "expected": { "entries": [{ "cost": "60.00", "status": "OK" }], "total": "60.00", "complete": true },
+      "computedBy": "agente (a mano)", "reviewedBy": null },
+    { "id": "COST-02", "title": "Half-up exacto en 0,005", "refs": ["E-20"], "rationale": "1 × 0,30 / 60 = 0,005 → 0,01.",
+      "input": { "entries": [{ "minutes": 1, "rate": "0.3000" }] }, "expected": { "total": "0.01" }, "computedBy": "agente (a mano)", "reviewedBy": null },
+    { "id": "COST-03", "title": "Justo por debajo de la mitad", "refs": ["E-20"], "rationale": "1 × 0,2999 / 60 = 0,0049983 → 0,00.",
+      "input": { "entries": [{ "minutes": 1, "rate": "0.2999" }] }, "expected": { "total": "0.00" }, "computedBy": "agente (a mano)", "reviewedBy": null },
+    { "id": "COST-04", "title": "Tarifa con cuatro decimales", "refs": ["05 rate decimal(14,4)"], "rationale": "7 × 33,3333 = 233,3331; / 60 = 3,888885 → 3,89.",
+      "input": { "entries": [{ "minutes": 7, "rate": "33.3333" }] }, "expected": { "total": "3.89" }, "computedBy": "agente (a mano)", "reviewedBy": null },
+    { "id": "COST-05", "title": "Redondeo por entrada, no sobre el total", "refs": ["04 §6", "E-20"],
+      "rationale": "Tres entradas de 0,005 → 0,01 cada una → total 0,03 (redondear el total exacto 0,015 daría 0,02). Es la regla de la v1.0; queda señalada para Finanzas.",
+      "input": { "entries": [{ "minutes": 1, "rate": "0.3000" }, { "minutes": 1, "rate": "0.3000" }, { "minutes": 1, "rate": "0.3000" }] }, "expected": { "total": "0.03" },
+      "computedBy": "agente (a mano)", "reviewedBy": null },
+    { "id": "COST-06", "title": "Tarifas congeladas distintas por entrada (AT-09)", "refs": ["AT-09", "RF-21"],
+      "rationale": "Entrada antigua a 40 → 60,00; entrada posterior a 45 → 60 × 45 / 60 = 45,00. El cambio de tarifa no recalcula la antigua. Total 105,00.",
+      "input": { "entries": [{ "minutes": 90, "rate": "40.0000" }, { "minutes": 60, "rate": "45.0000" }] },
+      "expected": { "entries": [{ "cost": "60.00" }, { "cost": "45.00" }], "total": "105.00" }, "computedBy": "agente (a mano)", "reviewedBy": null },
+    { "id": "COST-07", "title": "Entrada sin tarifa: coste incompleto, nunca 0 ficticio", "refs": ["RF-21", "P-11"],
+      "rationale": "La segunda entrada no tiene tarifa → INCOMPLETE; el total suma solo las conocidas y se marca incompleto.",
+      "input": { "entries": [{ "minutes": 90, "rate": "40.0000" }, { "minutes": 30, "rate": null }] },
+      "expected": { "entries": [{ "cost": "60.00", "status": "OK" }, { "cost": null, "status": "INCOMPLETE" }], "total": "60.00", "complete": false, "missingCount": 1 },
+      "computedBy": "agente (a mano)", "reviewedBy": null },
+    { "id": "COST-08", "title": "Jornada completa", "refs": ["RF-21"], "rationale": "1440 × 150,50 / 60 = 24 × 150,50 = 3612,00.",
+      "input": { "entries": [{ "minutes": 1440, "rate": "150.5000" }] }, "expected": { "total": "3612.00" }, "computedBy": "agente (a mano)", "reviewedBy": null }
+  ]
+}

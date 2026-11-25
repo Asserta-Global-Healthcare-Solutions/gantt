@@ -1,0 +1,43 @@
+{
+  "group": "dist",
+  "kind": "distribution",
+  "description": "Reparto del esfuerzo planificado (minutos enteros) por capacidad disponible del recurso en los días laborables del proyecto dentro del intervalo de la tarea, sin restar otras asignaciones. Mayor resto; empate → fecha más temprana. Suma exacta.",
+  "defaults": {
+    "project": { "startDate": "2026-11-30", "timezone": "Europe/Madrid" },
+    "calendar": { "weekdayMinutes": [480, 480, 480, 480, 480, 0, 0], "exceptions": [] },
+    "resource": { "weekdayMinutes": [480, 480, 480, 480, 480, 0, 0], "absences": [] },
+    "taskStart": "2026-11-30", "taskFinish": "2026-12-02"
+  },
+  "cases": [
+    { "id": "DIST-01", "title": "Resto empatado: gana la fecha más temprana", "refs": ["04 §6", "RF-19"],
+      "rationale": "1000 min en 3 días de 480: 333,33 cada uno → suelos 333 ×3 = 999, resto 1 → al primer día.",
+      "input": { "totalMinutes": 1000 },
+      "expected": { "distributed": true, "allocations": [{ "date": "2026-11-30", "minutes": 334 }, { "date": "2026-12-01", "minutes": 333 }, { "date": "2026-12-02", "minutes": 333 }], "warnings": [] },
+      "computedBy": "agente (a mano)", "reviewedBy": null },
+    { "id": "DIST-02", "title": "Ausencia parcial reduce el peso del día", "refs": ["RF-18"],
+      "rationale": "Capacidades 480, 240, 480 (C=1200). 1000 → 400, 200, 400 exactos.",
+      "input": { "totalMinutes": 1000, "resource": { "weekdayMinutes": [480, 480, 480, 480, 480, 0, 0], "absences": [{ "date": "2026-12-01", "minutes": 240 }] } },
+      "expected": { "distributed": true, "allocations": [{ "date": "2026-11-30", "minutes": 400 }, { "date": "2026-12-01", "minutes": 200 }, { "date": "2026-12-02", "minutes": 400 }] },
+      "computedBy": "agente (a mano)", "reviewedBy": null },
+    { "id": "DIST-03", "title": "Mayor resto con fracciones distintas", "refs": ["04 §6"],
+      "rationale": "7 min, capacidades 480, 480, 240 (C=1200): 2,8 / 2,8 / 1,4 → suelos 2, 2, 1 (5); resto 2 → a las fracciones 0,8 y 0,8 → 3, 3, 1.",
+      "input": { "totalMinutes": 7, "resource": { "weekdayMinutes": [480, 480, 480, 480, 480, 0, 0], "absences": [{ "date": "2026-12-02", "minutes": 240 }] } },
+      "expected": { "distributed": true, "allocations": [{ "date": "2026-11-30", "minutes": 3 }, { "date": "2026-12-01", "minutes": 3 }, { "date": "2026-12-02", "minutes": 1 }] },
+      "computedBy": "agente (a mano)", "reviewedBy": null },
+    { "id": "DIST-04", "title": "Sin capacidad: no se reparte y no se pierde esfuerzo", "refs": ["04 §6"],
+      "rationale": "Ausencia total los tres días → C=0: asignación no distribuida, aviso y 600 min retenidos (sin división por cero).",
+      "input": { "totalMinutes": 600, "resource": { "weekdayMinutes": [480, 480, 480, 480, 480, 0, 0], "absences": [{ "date": "2026-11-30", "minutes": 480 }, { "date": "2026-12-01", "minutes": 480 }, { "date": "2026-12-02", "minutes": 480 }] } },
+      "expected": { "distributed": false, "allocations": [], "retainedMinutes": 600, "warnings": ["UNDISTRIBUTED"] },
+      "computedBy": "agente (a mano)", "reviewedBy": null },
+    { "id": "DIST-05", "title": "Calendario del recurso a tiempo parcial", "refs": ["RF-18"],
+      "rationale": "Recurso L-X 240 min; tarea L-V. Días elegibles L, M, X (240 cada uno). 600 → 200 ×3.",
+      "input": { "totalMinutes": 600, "taskFinish": "2026-12-04", "resource": { "weekdayMinutes": [240, 240, 240, 0, 0, 0, 0], "absences": [] } },
+      "expected": { "distributed": true, "allocations": [{ "date": "2026-11-30", "minutes": 200 }, { "date": "2026-12-01", "minutes": 200 }, { "date": "2026-12-02", "minutes": 200 }] },
+      "computedBy": "agente (a mano)", "reviewedBy": null },
+    { "id": "DIST-06", "title": "Festivo del proyecto excluye el día aunque el recurso trabaje", "refs": ["CH-04"],
+      "rationale": "Festivo de proyecto X 12-02. Tarea L-J: días L, M, J. 960 → 320 ×3.",
+      "input": { "totalMinutes": 960, "taskFinish": "2026-12-03", "calendar": { "weekdayMinutes": [480, 480, 480, 480, 480, 0, 0], "exceptions": [{ "date": "2026-12-02", "minutes": 0 }] } },
+      "expected": { "distributed": true, "allocations": [{ "date": "2026-11-30", "minutes": 320 }, { "date": "2026-12-01", "minutes": 320 }, { "date": "2026-12-03", "minutes": 320 }] },
+      "computedBy": "agente (a mano)", "reviewedBy": null }
+  ]
+}

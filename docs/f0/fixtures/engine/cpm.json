@@ -1,0 +1,77 @@
+{
+  "group": "cpm",
+  "kind": "schedule",
+  "description": "Ruta crítica y holgura total (CH-02 §2.5). Holgura en días laborables; crítica ⇔ holgura ≤ 0 en tareas no completadas.",
+  "defaults": {
+    "project": { "startDate": "2026-11-30", "timezone": "Europe/Madrid" },
+    "calendar": { "weekdayMinutes": [480, 480, 480, 480, 480, 0, 0], "exceptions": [] },
+    "today": "2026-11-30"
+  },
+  "cases": [
+    {
+      "id": "CPM-01", "title": "Red A-B-C-H (caso v1.0)", "refs": ["04 §7", "AT-07"],
+      "rationale": "A s0 f2; B s2 f5; C s2 f3; H s5. T=5. LS_H=5; LS_B=min(2, 5−3)=2 → 0; LS_C=min(4, 5−1)=4 → 2; LS_A=min(3, 2−2, 4−2)=0 → 0. Críticas A, B, H.",
+      "input": { "tasks": [{ "id": "A", "kind": "task", "durationDays": 2 }, { "id": "B", "kind": "task", "durationDays": 3 }, { "id": "C", "kind": "task", "durationDays": 1 }, { "id": "H", "kind": "milestone" }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "FS", "lagDays": 0 }, { "id": "d2", "predecessorId": "A", "successorId": "C", "type": "FS", "lagDays": 0 },
+          { "id": "d3", "predecessorId": "B", "successorId": "H", "type": "FS", "lagDays": 0 }, { "id": "d4", "predecessorId": "C", "successorId": "H", "type": "FS", "lagDays": 0 }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 5,
+        "tasks": { "A": { "totalFloat": 0, "critical": true, "criticalReason": "cadenaFin" }, "B": { "totalFloat": 0, "critical": true }, "C": { "totalFloat": 2, "critical": false, "criticalReason": null }, "H": { "startIdx": 5, "totalFloat": 0, "critical": true } } },
+      "computedBy": "agente (a mano)", "reviewedBy": null
+    },
+    {
+      "id": "CPM-02", "title": "Dos rutas críticas paralelas", "refs": ["RF-15"],
+      "rationale": "A(2)→B(2)→D y A→C(2)→D. B y C idénticas: ambas holgura 0. T=4.",
+      "input": { "tasks": [{ "id": "A", "kind": "task", "durationDays": 2 }, { "id": "B", "kind": "task", "durationDays": 2 }, { "id": "C", "kind": "task", "durationDays": 2 }, { "id": "D", "kind": "milestone" }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "FS", "lagDays": 0 }, { "id": "d2", "predecessorId": "A", "successorId": "C", "type": "FS", "lagDays": 0 },
+          { "id": "d3", "predecessorId": "B", "successorId": "D", "type": "FS", "lagDays": 0 }, { "id": "d4", "predecessorId": "C", "successorId": "D", "type": "FS", "lagDays": 0 }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 4, "tasks": { "A": { "critical": true }, "B": { "totalFloat": 0, "critical": true }, "C": { "totalFloat": 0, "critical": true }, "D": { "startIdx": 4, "critical": true } } },
+      "computedBy": "agente (a mano)", "reviewedBy": null
+    },
+    {
+      "id": "CPM-03", "title": "Red con SS y FF", "refs": ["RF-15"],
+      "rationale": "A d4 s0 f4. B d2 SS+1: s1 f3. C d3 FF 0: sC ≥ 4−3 = 1 → s1 f4. D d1 FS de B y C: s=max(3,4)=4 f5. T=5. D: 0. C: LS=min(2, 4−3=1)=1 → 0. B: LS=min(3, 4−2=2)=2 → 1. A: LS=min(1, SS: LS_B−1=1, FF: LF_C−0−4 = 4−4 = 0) = 0.",
+      "input": { "tasks": [{ "id": "A", "kind": "task", "durationDays": 4 }, { "id": "B", "kind": "task", "durationDays": 2 }, { "id": "C", "kind": "task", "durationDays": 3 }, { "id": "D", "kind": "task", "durationDays": 1 }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "SS", "lagDays": 1 }, { "id": "d2", "predecessorId": "A", "successorId": "C", "type": "FF", "lagDays": 0 },
+          { "id": "d3", "predecessorId": "B", "successorId": "D", "type": "FS", "lagDays": 0 }, { "id": "d4", "predecessorId": "C", "successorId": "D", "type": "FS", "lagDays": 0 }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 5,
+        "tasks": { "A": { "startIdx": 0, "totalFloat": 0, "critical": true }, "B": { "startIdx": 1, "finishIdx": 3, "totalFloat": 1, "critical": false }, "C": { "startIdx": 1, "finishIdx": 4, "totalFloat": 0, "critical": true }, "D": { "startIdx": 4, "finishIdx": 5, "totalFloat": 0 } } },
+      "computedBy": "agente (a mano)", "reviewedBy": null
+    },
+    {
+      "id": "CPM-04", "title": "Tareas completadas fuera de la ruta crítica", "refs": ["CH-02 §2.5"],
+      "rationale": "A completada 11-30..12-01. B d3 FS s2 f5, C d1 FS s2 f3. T=5. A: holgura nula y no crítica; B 0; C 2.",
+      "input": { "today": "2026-12-02", "tasks": [{ "id": "A", "kind": "task", "durationDays": 2, "status": "completada", "actualStart": "2026-11-30", "actualFinish": "2026-12-01" },
+          { "id": "B", "kind": "task", "durationDays": 3 }, { "id": "C", "kind": "task", "durationDays": 1 }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "FS", "lagDays": 0 }, { "id": "d2", "predecessorId": "A", "successorId": "C", "type": "FS", "lagDays": 0 }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 5, "tasks": { "A": { "totalFloat": null, "critical": false, "criticalReason": null }, "B": { "totalFloat": 0, "critical": true }, "C": { "totalFloat": 2 } } },
+      "computedBy": "agente (a mano)", "reviewedBy": null
+    },
+    {
+      "id": "CPM-05", "title": "Ancla manual al final sin conflicto: holgura positiva en la predecesora", "refs": ["CH-02 §2.5"],
+      "rationale": "A d2 f2. B manual 12-04 (s4) d1 f5. FS cumplida. T=5. B: LS=5−1=4 → 0 (cadenaFin). A: LS=min(3, s_B−2=2)=2 → holgura 2.",
+      "input": { "tasks": [{ "id": "A", "kind": "task", "durationDays": 2 }, { "id": "B", "kind": "task", "durationDays": 1, "scheduleMode": "manual", "fixedStart": "2026-12-04" }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "FS", "lagDays": 0 }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 5, "conflicts": [], "tasks": { "A": { "totalFloat": 2, "critical": false }, "B": { "totalFloat": 0, "critical": true, "criticalReason": "cadenaFin" } } },
+      "computedBy": "agente (a mano)", "reviewedBy": null
+    },
+    {
+      "id": "CPM-06", "title": "Tarea aislada", "refs": ["RF-15"],
+      "rationale": "A d5, B d1 sin vínculos. T=5. B: LS=4 → holgura 4.",
+      "input": { "tasks": [{ "id": "A", "kind": "task", "durationDays": 5 }, { "id": "B", "kind": "task", "durationDays": 1 }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 5, "tasks": { "A": { "totalFloat": 0, "critical": true }, "B": { "totalFloat": 4, "critical": false } } },
+      "computedBy": "agente (a mano)", "reviewedBy": null
+    },
+    {
+      "id": "CPM-07", "title": "Ancla manual anterior con otra rama tardía (contraejemplo hallado por PR-09)", "refs": ["CH-02 §2.5", "PR-09"],
+      "rationale": "Z d4 f4 → U d1 FS (s4 f5) → M manual 12-03 (s3) d1: conflicto en U→M (exige 5, real 3). X d1 f1 → U FS. T = 5 (fin de U). LS_U = min(T−1=4, s_M − 1 = 2) = 2 → holgura 2−4 = −2. LS_X = min(4, LS_U − 1 = 1) = 1 → holgura 1 (s_X = 0). LS_Z = min(1, 2 − 4) = −2 → −2. M: LS = 4 → holgura 1. La holgura de X no hereda el retraso de Z: se mide respecto a las cotas aguas abajo, suponiendo el resto en sus fechas tardías (CPM estándar).",
+      "input": { "tasks": [{ "id": "X", "kind": "task", "durationDays": 1 }, { "id": "Z", "kind": "task", "durationDays": 4 }, { "id": "U", "kind": "task", "durationDays": 1 },
+          { "id": "M", "kind": "task", "durationDays": 1, "scheduleMode": "manual", "fixedStart": "2026-12-03" }],
+        "dependencies": [{ "id": "d1", "predecessorId": "X", "successorId": "U", "type": "FS", "lagDays": 0 }, { "id": "d2", "predecessorId": "Z", "successorId": "U", "type": "FS", "lagDays": 0 },
+          { "id": "d3", "predecessorId": "U", "successorId": "M", "type": "FS", "lagDays": 0 }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 5,
+        "tasks": { "U": { "startIdx": 4, "finishIdx": 5, "totalFloat": -2 }, "X": { "totalFloat": 1, "critical": false, "criticalReason": null }, "Z": { "totalFloat": -2, "critical": true, "criticalReason": "ancladaManual" }, "M": { "class": "MANUAL", "startIdx": 3, "totalFloat": 1, "critical": false } },
+        "conflicts": [{ "dependencyId": "d3", "kind": "MANUAL", "deficitDays": 2 }] },
+      "computedBy": "agente (a mano)", "reviewedBy": null
+    }
+  ]
+}

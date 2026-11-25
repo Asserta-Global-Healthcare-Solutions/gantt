@@ -90,6 +90,8 @@ Sustituye «si plan no factible, no publicar».
 ### 2.6 Propiedades del motor
 Sustituyen 07 §2, «property-based».
 
+> **Nota AP-004 (2026-11-25):** PR-07 tal como está escrita aquí es falsa con vínculos FF/SF entrantes. Queda sustituida por PR-07a/b, y la definición de holgura se aclara en [AP-004 §7 y §11](AP-004-contrato-motor.md#11-propiedades-sustituyen-a-ch-02-26). El contrato AP-004 es el texto vigente.
+
 | ID | Propiedad |
 |---|---|
 | PR-01 | **Satisfacción condicionada:** toda arista se cumple, salvo que B ∈ {MANUAL, FACT_*} y la arista figure en `conflicts`. Una tarea AUTO nunca tiene aristas entrantes incumplidas; FACT_RUNNING nunca incumple cotas de fin |

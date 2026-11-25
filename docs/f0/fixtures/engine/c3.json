@@ -1,0 +1,142 @@
+{
+  "group": "c3",
+  "kind": "schedule",
+  "description": "Política de conflictos D-08: manuales, hechos reales, trabajo restante y holgura negativa por ancla. Calendario L-V; índices 0=11-30 L … 4=12-04 V, 5=12-07 L, 6=12-08 M.",
+  "defaults": {
+    "project": { "startDate": "2026-11-30", "timezone": "Europe/Madrid" },
+    "calendar": { "weekdayMinutes": [480, 480, 480, 480, 480, 0, 0], "exceptions": [] },
+    "today": "2026-11-30"
+  },
+  "cases": [
+    {
+      "id": "C3-01", "title": "Sucesora manual anterior a su cota: conserva fecha y registra conflicto", "refs": ["G-C3-01", "G-C3-10", "D-08"],
+      "rationale": "A d2 f2. B manual fijada 12-01 (s1) d2 → f3. FS exige sB ≥ 2; real 1 → conflicto MANUAL, déficit 1. T=3. B: LS=3−2=1 → 0, cadenaFin. A: LS=min(3−2=1, s_B−0−2=−1) = −1 → holgura negativa, ancladaManual.",
+      "input": { "tasks": [{ "id": "A", "kind": "task", "durationDays": 2 }, { "id": "B", "kind": "task", "durationDays": 2, "scheduleMode": "manual", "fixedStart": "2026-12-01" }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "FS", "lagDays": 0 }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 3, "warnings": [],
+        "tasks": { "A": { "class": "AUTO", "startIdx": 0, "finishIdx": 2, "totalFloat": -1, "critical": true, "criticalReason": "ancladaManual" },
+                   "B": { "class": "MANUAL", "startIdx": 1, "finishIdx": 3, "start": "2026-12-01", "finish": "2026-12-02", "totalFloat": 0, "critical": true, "criticalReason": "cadenaFin" } },
+        "conflicts": [{ "dependencyId": "d1", "successorId": "B", "kind": "MANUAL", "requiredIdx": 2, "actualIdx": 1, "deficitDays": 1, "requiredDate": "2026-12-02", "actualDate": "2026-12-01" }] },
+      "computedBy": "agente (a mano)", "reviewedBy": null
+    },
+    {
+      "id": "C3-02a", "title": "Conflicto nuevo respecto a la revisión vigente → debe reconocerse", "refs": ["G-C3-02", "CH-02 §2.3"],
+      "rationale": "Mismo plan que C3-01; la revisión anterior no tenía conflictos → newConflicts = [d1]. Sin reconocerlo la API responde 422 (prueba de integración en AP-021).",
+      "input": { "previousConflicts": [], "tasks": [{ "id": "A", "kind": "task", "durationDays": 2 }, { "id": "B", "kind": "task", "durationDays": 2, "scheduleMode": "manual", "fixedStart": "2026-12-01" }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "FS", "lagDays": 0 }] },
+      "expected": { "outcome": "ok", "newConflicts": ["d1"] },
+      "computedBy": "agente (a mano)", "reviewedBy": null
+    },
+    {
+      "id": "C3-02b", "title": "Conflicto ya reconocido en la revisión anterior → no es nuevo", "refs": ["G-C3-02"],
+      "rationale": "La clave de conflicto es (dependencyId, kind). Si ya existía, newConflicts = [].",
+      "input": { "previousConflicts": [{ "dependencyId": "d1", "kind": "MANUAL" }], "tasks": [{ "id": "A", "kind": "task", "durationDays": 2 }, { "id": "B", "kind": "task", "durationDays": 2, "scheduleMode": "manual", "fixedStart": "2026-12-01" }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "FS", "lagDays": 0 }] },
+      "expected": { "outcome": "ok", "newConflicts": [] },
+      "computedBy": "agente (a mano)", "reviewedBy": null
+    },
+    {
+      "id": "C3-03", "title": "Predecesora completada con fechas reales: la sucesora parte de los hechos", "refs": ["G-C3-03"],
+      "rationale": "A completada 11-30..12-02 (3 días reales frente a 2 planificados): s=B(11-30)=0, f=Bend(12-02)=3. B FS: s3 (jueves) f5. T = máx f no completadas = 5. A excluida del CPM.",
+      "input": { "today": "2026-12-03", "tasks": [{ "id": "A", "kind": "task", "durationDays": 2, "status": "completada", "actualStart": "2026-11-30", "actualFinish": "2026-12-02" }, { "id": "B", "kind": "task", "durationDays": 2 }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "FS", "lagDays": 0 }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 5, "conflicts": [], "warnings": [],
+        "tasks": { "A": { "class": "FACT_DONE", "startIdx": 0, "finishIdx": 3, "start": "2026-11-30", "finish": "2026-12-02", "totalFloat": null, "critical": false },
+                   "B": { "class": "AUTO", "startIdx": 3, "finishIdx": 5, "start": "2026-12-03", "finish": "2026-12-04", "totalFloat": 0 } } },
+      "computedBy": "agente (a mano)", "reviewedBy": null
+    },
+    {
+      "id": "C3-04", "title": "Sucesora completada no se mueve al ampliar la predecesora: conflicto FACT", "refs": ["G-C3-04"],
+      "rationale": "A d3 f3. B completada 12-02..12-03: s2 f4. FS exige sB ≥ 3; real 2 → FACT, déficit 1. T = f de A = 3. A: LS = 3−3 = 0; arista a FACT_DONE no se propaga. Hoy 12-04 > inicio de A (no iniciada) → START_OVERDUE.",
+      "input": { "today": "2026-12-04", "tasks": [{ "id": "A", "kind": "task", "durationDays": 3 }, { "id": "B", "kind": "task", "durationDays": 2, "status": "completada", "actualStart": "2026-12-02", "actualFinish": "2026-12-03" }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "FS", "lagDays": 0 }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 3,
+        "tasks": { "A": { "startIdx": 0, "finishIdx": 3, "totalFloat": 0, "critical": true, "criticalReason": "cadenaFin" }, "B": { "class": "FACT_DONE", "startIdx": 2, "finishIdx": 4, "start": "2026-12-02", "finish": "2026-12-03" } },
+        "conflicts": [{ "dependencyId": "d1", "successorId": "B", "kind": "FACT", "requiredIdx": 3, "actualIdx": 2, "deficitDays": 1, "requiredDate": "2026-12-03", "actualDate": "2026-12-02" }],
+        "warnings": [{ "code": "START_OVERDUE", "taskId": "A" }] },
+      "computedBy": "agente (a mano)", "reviewedBy": null
+    },
+    {
+      "id": "C3-05a", "title": "En curso con trabajo restante: el fin se recalcula, los hechos no", "refs": ["G-C3-05", "P-24"],
+      "rationale": "A completada 11-30..12-01 → f=2. B en curso desde 12-02 (s=2), restante 2 días a partir de 12-04 (índice 4) → f = 4+2 = 6 (último día ocupado L 12-07; fin exclusivo M 12-08). FS cumplida (2 ≥ 2). T=6; holgura de B sobre el fin = 6−6 = 0.",
+      "input": { "today": "2026-12-04", "tasks": [{ "id": "A", "kind": "task", "durationDays": 2, "status": "completada", "actualStart": "2026-11-30", "actualFinish": "2026-12-01" },
+          { "id": "B", "kind": "task", "durationDays": 3, "status": "en_curso", "actualStart": "2026-12-02", "remainingDurationDays": 2, "remainingAsOf": "2026-12-04" }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "FS", "lagDays": 0 }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 6, "conflicts": [], "warnings": [],
+        "tasks": { "B": { "class": "FACT_RUNNING", "startIdx": 2, "finishIdx": 6, "start": "2026-12-02", "finish": "2026-12-07", "totalFloat": 0, "critical": true } } },
+      "computedBy": "agente (a mano)", "reviewedBy": null
+    },
+    {
+      "id": "C3-05b", "title": "En curso sin trabajo restante declarado: conserva la duración planificada", "refs": ["G-C3-05"],
+      "rationale": "Igual que C3-05a sin remaining: f = s + d = 2 + 3 = 5 (último día V 12-04).",
+      "input": { "today": "2026-12-04", "tasks": [{ "id": "A", "kind": "task", "durationDays": 2, "status": "completada", "actualStart": "2026-11-30", "actualFinish": "2026-12-01" },
+          { "id": "B", "kind": "task", "durationDays": 3, "status": "en_curso", "actualStart": "2026-12-02" }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "FS", "lagDays": 0 }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 5, "tasks": { "B": { "class": "FACT_RUNNING", "startIdx": 2, "finishIdx": 5, "finish": "2026-12-04" } } },
+      "computedBy": "agente (a mano)", "reviewedBy": null
+    },
+    {
+      "id": "C3-06", "title": "FF hacia una tarea en curso empuja su fin, no su inicio", "refs": ["G-C3-06"],
+      "rationale": "A d6 f6. B en curso desde 11-30 d3: base f=3; FF exige fB ≥ 6 → f6. Inicio intacto (0). T=6. B: LF=6 → 0. A: LS=min(6−6=0, LF_B−0−6=0) = 0.",
+      "input": { "tasks": [{ "id": "A", "kind": "task", "durationDays": 6 }, { "id": "B", "kind": "task", "durationDays": 3, "status": "en_curso", "actualStart": "2026-11-30" }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "FF", "lagDays": 0 }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 6, "conflicts": [],
+        "tasks": { "A": { "startIdx": 0, "finishIdx": 6, "totalFloat": 0 }, "B": { "class": "FACT_RUNNING", "startIdx": 0, "finishIdx": 6, "start": "2026-11-30", "finish": "2026-12-07", "totalFloat": 0 } } },
+      "computedBy": "agente (a mano)", "reviewedBy": null
+    },
+    {
+      "id": "C3-07", "title": "Un ciclo que pasa por una tarea manual se rechaza igualmente", "refs": ["G-C3-07", "PR-10"],
+      "rationale": "A→B y B→A: ciclo estructural; los modos no lo excusan.",
+      "input": { "tasks": [{ "id": "A", "kind": "task", "durationDays": 1 }, { "id": "B", "kind": "task", "durationDays": 1, "scheduleMode": "manual", "fixedStart": "2026-12-01" }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "FS", "lagDays": 0 }, { "id": "d2", "predecessorId": "B", "successorId": "A", "type": "FS", "lagDays": 0 }] },
+      "expected": { "outcome": "error", "errors": ["CYCLE"] },
+      "computedBy": "agente (a mano)", "reviewedBy": null
+    },
+    {
+      "id": "C3-08", "title": "Tarea reabierta: vuelve a FACT_RUNNING con su inicio real", "refs": ["G-C3-08", "CH-03"],
+      "rationale": "Reabrir quita actualFinish (el anterior queda en el historial, fuera del motor) y declara restante 1 desde 12-02 → f = 2+1 = 3; último día 12-02.",
+      "input": { "today": "2026-12-02", "tasks": [{ "id": "A", "kind": "task", "durationDays": 2, "status": "en_curso", "actualStart": "2026-11-30", "remainingDurationDays": 1, "remainingAsOf": "2026-12-02" }] },
+      "expected": { "outcome": "ok", "tasks": { "A": { "class": "FACT_RUNNING", "startIdx": 0, "finishIdx": 3, "start": "2026-11-30", "finish": "2026-12-02" } } },
+      "computedBy": "agente (a mano)", "reviewedBy": null
+    },
+    {
+      "id": "C3-09", "title": "Sucesora automática de una manual se calcula desde las fechas manuales", "refs": ["G-C3-09"],
+      "rationale": "A manual 12-02 d2: s2 f4. B FS: s4 f5. T=5. A: LS=min(3, 4−2=2) = 2 → 0 (cadenaFin). B: 0.",
+      "input": { "tasks": [{ "id": "A", "kind": "task", "durationDays": 2, "scheduleMode": "manual", "fixedStart": "2026-12-02" }, { "id": "B", "kind": "task", "durationDays": 1 }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "FS", "lagDays": 0 }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 5, "conflicts": [], "warnings": [],
+        "tasks": { "A": { "class": "MANUAL", "startIdx": 2, "finishIdx": 4, "totalFloat": 0, "criticalReason": "cadenaFin" }, "B": { "startIdx": 4, "finishIdx": 5, "start": "2026-12-04", "totalFloat": 0 } } },
+      "computedBy": "agente (a mano)", "reviewedBy": null
+    },
+    {
+      "id": "C3-10", "title": "Holgura negativa solo en la rama que llega tarde al ancla manual", "refs": ["G-C3-10"],
+      "rationale": "A d3 f3, C d1 f1, B manual 12-02 (s2) d1 f3. A→B exige 3 → conflicto déficit 1; C→B exige 1 → cumplida. T=3. A: LS=min(0, 2−3) = −1. C: LS=min(2, 2−1) = 1 → holgura 1. B: 0.",
+      "input": { "tasks": [{ "id": "A", "kind": "task", "durationDays": 3 }, { "id": "C", "kind": "task", "durationDays": 1 }, { "id": "B", "kind": "task", "durationDays": 1, "scheduleMode": "manual", "fixedStart": "2026-12-02" }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "FS", "lagDays": 0 }, { "id": "d2", "predecessorId": "C", "successorId": "B", "type": "FS", "lagDays": 0 }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 3,
+        "tasks": { "A": { "totalFloat": -1, "critical": true, "criticalReason": "ancladaManual" }, "C": { "totalFloat": 1, "critical": false }, "B": { "totalFloat": 0, "critical": true } },
+        "conflicts": [{ "dependencyId": "d1", "kind": "MANUAL", "requiredIdx": 3, "actualIdx": 2, "deficitDays": 1, "requiredDate": "2026-12-03", "actualDate": "2026-12-02" }] },
+      "computedBy": "agente (a mano)", "reviewedBy": null
+    },
+    {
+      "id": "C3-11", "title": "Hecho registrado en sábado: la sucesora no cae en día no laborable", "refs": ["G-C3-11"],
+      "rationale": "A completada 12-03..12-05 (sábado): s=B(12-03)=3, f=Bend(sábado)=primer laborable > sábado = L 12-07 = 5. B FS: s5 f6 (lunes). Se muestran las fechas reales (12-05) y se avisa FACT_ON_NON_WORKING_DAY.",
+      "input": { "today": "2026-12-07", "tasks": [{ "id": "A", "kind": "task", "durationDays": 2, "status": "completada", "actualStart": "2026-12-03", "actualFinish": "2026-12-05" }, { "id": "B", "kind": "task", "durationDays": 1 }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "FS", "lagDays": 0 }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 6, "conflicts": [], "warnings": [{ "code": "FACT_ON_NON_WORKING_DAY", "taskId": "A" }],
+        "tasks": { "A": { "startIdx": 3, "finishIdx": 5, "start": "2026-12-03", "finish": "2026-12-05" }, "B": { "startIdx": 5, "finishIdx": 6, "start": "2026-12-07" } } },
+      "computedBy": "agente (a mano)", "reviewedBy": null
+    },
+    {
+      "id": "C3-12", "title": "En curso antes de que termine su predecesora: conflicto FACT en el inicio", "refs": ["CH-02 §2.3"],
+      "rationale": "A d3 f3 (no iniciada). B en curso desde 12-01 (s1) d2 → f3. FS exige sB ≥ 3; real 1 → FACT déficit 2. Las cotas de inicio hacia FACT_RUNNING no se propagan hacia atrás: A LS = 3−3 = 0. START_OVERDUE de A (hoy 12-01 > 11-30).",
+      "input": { "today": "2026-12-01", "tasks": [{ "id": "A", "kind": "task", "durationDays": 3 }, { "id": "B", "kind": "task", "durationDays": 2, "status": "en_curso", "actualStart": "2026-12-01" }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "FS", "lagDays": 0 }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 3,
+        "tasks": { "A": { "totalFloat": 0 }, "B": { "class": "FACT_RUNNING", "startIdx": 1, "finishIdx": 3, "totalFloat": 0 } },
+        "conflicts": [{ "dependencyId": "d1", "kind": "FACT", "requiredIdx": 3, "actualIdx": 1, "deficitDays": 2 }],
+        "warnings": [{ "code": "START_OVERDUE", "taskId": "A" }] },
+      "computedBy": "agente (a mano)", "reviewedBy": null
+    }
+  ]
+}
