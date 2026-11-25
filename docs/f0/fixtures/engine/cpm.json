@@ -16,7 +16,7 @@
           { "id": "d3", "predecessorId": "B", "successorId": "H", "type": "FS", "lagDays": 0 }, { "id": "d4", "predecessorId": "C", "successorId": "H", "type": "FS", "lagDays": 0 }] },
       "expected": { "outcome": "ok", "projectFinishIdx": 5,
         "tasks": { "A": { "totalFloat": 0, "critical": true, "criticalReason": "cadenaFin" }, "B": { "totalFloat": 0, "critical": true }, "C": { "totalFloat": 2, "critical": false, "criticalReason": null }, "H": { "startIdx": 5, "totalFloat": 0, "critical": true } } },
-      "computedBy": "agente (a mano)", "reviewedBy": null
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
     },
     {
       "id": "CPM-02", "title": "Dos rutas críticas paralelas", "refs": ["RF-15"],
@@ -25,7 +25,7 @@
         "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "FS", "lagDays": 0 }, { "id": "d2", "predecessorId": "A", "successorId": "C", "type": "FS", "lagDays": 0 },
           { "id": "d3", "predecessorId": "B", "successorId": "D", "type": "FS", "lagDays": 0 }, { "id": "d4", "predecessorId": "C", "successorId": "D", "type": "FS", "lagDays": 0 }] },
       "expected": { "outcome": "ok", "projectFinishIdx": 4, "tasks": { "A": { "critical": true }, "B": { "totalFloat": 0, "critical": true }, "C": { "totalFloat": 0, "critical": true }, "D": { "startIdx": 4, "critical": true } } },
-      "computedBy": "agente (a mano)", "reviewedBy": null
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
     },
     {
       "id": "CPM-03", "title": "Red con SS y FF", "refs": ["RF-15"],
@@ -35,7 +35,7 @@
           { "id": "d3", "predecessorId": "B", "successorId": "D", "type": "FS", "lagDays": 0 }, { "id": "d4", "predecessorId": "C", "successorId": "D", "type": "FS", "lagDays": 0 }] },
       "expected": { "outcome": "ok", "projectFinishIdx": 5,
         "tasks": { "A": { "startIdx": 0, "totalFloat": 0, "critical": true }, "B": { "startIdx": 1, "finishIdx": 3, "totalFloat": 1, "critical": false }, "C": { "startIdx": 1, "finishIdx": 4, "totalFloat": 0, "critical": true }, "D": { "startIdx": 4, "finishIdx": 5, "totalFloat": 0 } } },
-      "computedBy": "agente (a mano)", "reviewedBy": null
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
     },
     {
       "id": "CPM-04", "title": "Tareas completadas fuera de la ruta crítica", "refs": ["CH-02 §2.5"],
@@ -44,7 +44,7 @@
           { "id": "B", "kind": "task", "durationDays": 3 }, { "id": "C", "kind": "task", "durationDays": 1 }],
         "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "FS", "lagDays": 0 }, { "id": "d2", "predecessorId": "A", "successorId": "C", "type": "FS", "lagDays": 0 }] },
       "expected": { "outcome": "ok", "projectFinishIdx": 5, "tasks": { "A": { "totalFloat": null, "critical": false, "criticalReason": null }, "B": { "totalFloat": 0, "critical": true }, "C": { "totalFloat": 2 } } },
-      "computedBy": "agente (a mano)", "reviewedBy": null
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
     },
     {
       "id": "CPM-05", "title": "Ancla manual al final sin conflicto: holgura positiva en la predecesora", "refs": ["CH-02 §2.5"],
@@ -52,14 +52,14 @@
       "input": { "tasks": [{ "id": "A", "kind": "task", "durationDays": 2 }, { "id": "B", "kind": "task", "durationDays": 1, "scheduleMode": "manual", "fixedStart": "2026-12-04" }],
         "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "FS", "lagDays": 0 }] },
       "expected": { "outcome": "ok", "projectFinishIdx": 5, "conflicts": [], "tasks": { "A": { "totalFloat": 2, "critical": false }, "B": { "totalFloat": 0, "critical": true, "criticalReason": "cadenaFin" } } },
-      "computedBy": "agente (a mano)", "reviewedBy": null
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
     },
     {
       "id": "CPM-06", "title": "Tarea aislada", "refs": ["RF-15"],
       "rationale": "A d5, B d1 sin vínculos. T=5. B: LS=4 → holgura 4.",
       "input": { "tasks": [{ "id": "A", "kind": "task", "durationDays": 5 }, { "id": "B", "kind": "task", "durationDays": 1 }] },
       "expected": { "outcome": "ok", "projectFinishIdx": 5, "tasks": { "A": { "totalFloat": 0, "critical": true }, "B": { "totalFloat": 4, "critical": false } } },
-      "computedBy": "agente (a mano)", "reviewedBy": null
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
     },
     {
       "id": "CPM-07", "title": "Ancla manual anterior con otra rama tardía (contraejemplo hallado por PR-09)", "refs": ["CH-02 §2.5", "PR-09"],
@@ -71,7 +71,7 @@
       "expected": { "outcome": "ok", "projectFinishIdx": 5,
         "tasks": { "U": { "startIdx": 4, "finishIdx": 5, "totalFloat": -2 }, "X": { "totalFloat": 1, "critical": false, "criticalReason": null }, "Z": { "totalFloat": -2, "critical": true, "criticalReason": "ancladaManual" }, "M": { "class": "MANUAL", "startIdx": 3, "totalFloat": 1, "critical": false } },
         "conflicts": [{ "dependencyId": "d3", "kind": "MANUAL", "deficitDays": 2 }] },
-      "computedBy": "agente (a mano)", "reviewedBy": null
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
     }
   ]
 }

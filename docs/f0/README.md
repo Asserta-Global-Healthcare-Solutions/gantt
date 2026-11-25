@@ -1,6 +1,6 @@
 # F0 — Entregables de definición y PoC
 
-Estado: **AP-001 aprobado técnicamente** por el responsable técnico (2026-11-25); validación funcional pendiente (P-01, P-02). **AP-004 en revisión.** Ramas: `feat/AP-001-descubrimiento`, `feat/AP-004-contrato-motor` (commits locales autorizados, sin push).
+Estado: **AP-001 aprobado técnicamente** por el responsable técnico (2026-11-25); validación funcional pendiente (P-01, P-02). **AP-004 cerrado** (2026-11-25). **AP-002a en curso.** Ramas: `feat/AP-001-descubrimiento`, `feat/AP-004-contrato-motor` (commits locales autorizados, sin push).
 
 Estos documentos son nuevos y **no sustituyen** el kit original (`README.md`, `AGENTS.md`, `docs/01..08`, `docs/adr/0000`). Las correcciones se proponen aquí y solo se aplicarán al kit tras su aprobación.
 
@@ -13,7 +13,7 @@ Estos documentos son nuevos y **no sustituyen** el kit original (`README.md`, `A
 | 5 | [AP-001-05-decisiones-pendientes.md](AP-001-05-decisiones-pendientes.md) | Decisiones abiertas y responsable de validarlas |
 | 6 | [AP-001-06-backlog-f0.md](AP-001-06-backlog-f0.md) | Backlog F0 actualizado y deltas sobre F1–F6 |
 | 7 | [AP-001-07-plan-ap002a-ap004-ap005.md](AP-001-07-plan-ap002a-ap004-ap005.md) | Plan de ejecución de los siguientes tickets |
-| AP-004 | [AP-004-contrato-motor.md](AP-004-contrato-motor.md) | Contrato normativo del motor v1.1 (en revisión) |
+| AP-004 | [AP-004-contrato-motor.md](AP-004-contrato-motor.md) | Contrato normativo del motor v1.1 (aprobado) |
 | AP-004 | [fixtures/engine/](fixtures/engine/) | 90 casos dorados con esquema; verificados por `poc/engine-oracle/` |
 
 ## Convenciones

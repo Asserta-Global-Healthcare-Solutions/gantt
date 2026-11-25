@@ -13,19 +13,19 @@
         "current": { "calendarVersion": "v1", "tasks": [{ "id": "A", "start": "2026-11-30", "finish": "2026-12-02", "durationDays": 3, "estimatedEffortMinutes": 960 }, { "id": "B", "start": "2026-12-03", "finish": "2026-12-07", "durationDays": 3, "estimatedEffortMinutes": 1440 }, { "id": "C", "start": "2026-12-08", "finish": "2026-12-08", "durationDays": 1 }] } },
       "expected": { "added": ["C"], "removed": [], "unchanged": [], "warnings": [],
         "changed": [{ "id": "A", "startDelta": 0, "finishDelta": 1, "durationDelta": 1, "effortDelta": 0 }, { "id": "B", "startDelta": 1, "finishDelta": 1, "durationDelta": 0, "effortDelta": 0 }] },
-      "computedBy": "agente (a mano)", "reviewedBy": null },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)" },
     { "id": "BASE-02", "title": "Tarea retirada y cambio de versión de calendario", "refs": ["RF-16", "CH-04"],
       "rationale": "D existe solo en la línea base → removed. Versiones v1 ≠ v2 → CALENDAR_CHANGED. A sin cambios.",
       "input": { "baseline": { "calendarVersion": "v1", "tasks": [{ "id": "A", "start": "2026-11-30", "finish": "2026-12-01", "durationDays": 2 }, { "id": "D", "start": "2026-12-02", "finish": "2026-12-02", "durationDays": 1 }] },
         "current": { "calendarVersion": "v2", "tasks": [{ "id": "A", "start": "2026-11-30", "finish": "2026-12-01", "durationDays": 2 }] } },
       "expected": { "added": [], "removed": ["D"], "unchanged": ["A"], "changed": [], "warnings": ["CALENDAR_CHANGED"] },
-      "computedBy": "agente (a mano)", "reviewedBy": null },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)" },
     { "id": "BASE-03", "title": "Delta medido con los festivos del calendario actual", "refs": ["04 §5"],
       "rationale": "Calendario actual con festivo M 12-08. Fin 12-07 → 12-09: L(5) → X(6) = +1 laborable (no +2 naturales).",
       "input": { "calendar": { "weekdayMinutes": [480, 480, 480, 480, 480, 0, 0], "exceptions": [{ "date": "2026-12-08", "minutes": 0 }] },
         "baseline": { "calendarVersion": "v2", "tasks": [{ "id": "B", "start": "2026-12-03", "finish": "2026-12-07", "durationDays": 3 }] },
         "current": { "calendarVersion": "v2", "tasks": [{ "id": "B", "start": "2026-12-03", "finish": "2026-12-09", "durationDays": 3 }] } },
       "expected": { "changed": [{ "id": "B", "startDelta": 0, "finishDelta": 1, "durationDelta": 0 }] },
-      "computedBy": "agente (a mano)", "reviewedBy": null }
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)" }
   ]
 }

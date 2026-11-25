@@ -2,8 +2,8 @@
 
 | Campo | Valor |
 |---|---|
-| Estado | **En revisión.** Firma humana pendiente (§12) |
-| Versión del contrato | `engine-contract 1.1.0-rc1` |
+| Estado | **Aprobado** por el responsable técnico (2026-11-25), con P-14 (convención A) y P-24 decididas (§15) |
+| Versión del contrato | `engine-contract 1.1.0` |
 | Sustituye | 04-MOTOR-PLANIFICACION §1–§4 y §7 de v1.0, en lo indicado (las partes no mencionadas siguen vigentes) |
 | Origen | D-08, D-09, D-13, D-14 ([acta](AP-001-01-acta-decisiones.md)); CH-02..CH-06 ([v1.1](AP-001-03-propuesta-v1.1.md)) |
 | Casos dorados | [fixtures/engine/](fixtures/engine/) (90 casos) · esquema [schema.json](fixtures/engine/schema.json) |
@@ -276,13 +276,13 @@ Ejecutado el 2026-11-25 con Node v24.19.0, sin dependencias externas:
 
 | P | Efecto | Casos afectados |
 |---|---|---|
-| P-24 | Semántica del trabajo restante (`remainingDurationDays` + `remainingAsOf`) | C3-05a/b, C3-08, VAL-07/08 |
-| P-14 | Convención de fechas mostradas de los hitos | DEP-08, DEP-14/15, WBS-03/05 |
+| ~~P-24~~ | **Aceptada 2026-11-25:** `remainingDurationDays` + `remainingAsOf` | C3-05a/b, C3-08, VAL-07/08 |
+| ~~P-14~~ | **Convención A 2026-11-25:** un hito en frontera se muestra en la fecha del día laborable que empieza en esa frontera | DEP-08, DEP-14/15, WBS-03/05 |
 | P-12 | Modo único de asignación | DIST-* |
 | P-10 / P-11 | Tarifa y coste incompleto; redondeo por entrada | COST-05, COST-07 |
 
 ## 15. Firma
 | Rol | Nombre | Fecha | Resultado |
 |---|---|---|---|
-| Responsable técnico (contrato y fixtures) | — | — | Pendiente |
-| Producto (P-14, P-24) | — | — | Pendiente |
+| Responsable técnico (contrato, fixtures, P-14, P-24) | Responsable técnico provisional | 2026-11-25 | **Aprobado.** Aprobación global del ticket; los 90 casos llevan `reviewedBy` con esa referencia |
+| Producto / validación funcional | Pendiente de designación (P-02) | — | Pendiente; puede revisar P-14 en AP-002b |
