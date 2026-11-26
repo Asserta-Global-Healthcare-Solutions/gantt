@@ -15,6 +15,7 @@ Estos documentos son nuevos y **no sustituyen** el kit original (`README.md`, `A
 | 7 | [AP-001-07-plan-ap002a-ap004-ap005.md](AP-001-07-plan-ap002a-ap004-ap005.md) | Plan de ejecución de los siguientes tickets |
 | AP-004 | [AP-004-contrato-motor.md](AP-004-contrato-motor.md) | Contrato normativo del motor v1.1 (aprobado) |
 | AP-004 | [fixtures/engine/](fixtures/engine/) | 90 casos dorados con esquema; verificados por `poc/engine-oracle/` |
+| AP-005 | [AP-005-00-resumen.md](AP-005-00-resumen.md) (+ 01–05) | Threat model, activos, STRIDE, permisos, Entra, sesiones, integraciones, matriz ENS preliminar, continuidad, riesgos y pruebas; en revisión |
 | AP-002a | [AP-002a-direccion-visual.md](AP-002a-direccion-visual.md) · [galería](AP-002a-galeria.html) | Direcciones A, B y C · Asserta (provisional), prototipos en `poc/ux-ap002a/`, en revisión |
 
 ## Convenciones
