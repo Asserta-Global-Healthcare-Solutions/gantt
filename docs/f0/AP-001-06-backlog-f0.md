@@ -33,7 +33,7 @@ Se aplicarán al `backlog.csv` solo cuando se apruebe la v1.1.
 | AP-011 | Se divide en AP-011a (modelo de grants y evaluador deny-by-default) y AP-011b (concesiones, sin autoasignación, break-glass, tests negativos) | CH-08 |
 | AP-013 | Revocación de membresía con tareas a cargo (P-27); `visibility` del proyecto | CH-05, CH-08 |
 | AP-014 | + responsable principal, colaboradores, esfuerzo estimado, `sortKey` fraccional, fechas reales y trabajo restante | CH-05, CH-07, CH-03 |
-| AP-015 | Se divide en `AP-015a` (P0: shell web e inicio personal) y `AP-015b` (P1, S: preferencias de usuario en servidor RF-34, tabla `user_preference`, `GET/PUT /api/v1/me/preferences`, sincronización entre dispositivos y AT-24) | CH-16 |
+| AP-015 | Se divide en `AP-015a` (P0: shell web e inicio personal) y el ticket independiente **`AP-015b`** (P1, S/M: preferencias de usuario en servidor RF-34 con modelo versionado `user_preference` + `user_view_preference`, preferencias globales y por proyecto/vista, columnas visibles/orden, zoom de proyecto, restablecimiento, adaptación no destructiva entre viewports, endpoints `GET/PUT/reset` y pruebas AT-24/ST-23) | CH-16 |
 | AP-016 | Motor isomórfico sin Temporal; fronteras `B`/`Bend`; zona del proyecto para «hoy» | CH-02, CH-10 |
 | AP-017 | Versiones inmutables sin `validFrom`; cambio de versión con preview | CH-04 |
 | AP-019 | + clases AUTO/MANUAL/FACT_*, conflictos y PR-01..08, PR-10, PR-11 | CH-02 |
