@@ -1,0 +1,89 @@
+AP-002b · Verificación automatizada (Playwright + axe-core)
+Servidor local: http://127.0.0.1:55131/ux-ap002b
+Assets node_modules: c:\repositorios\gantt\gantt\poc\ux-ap002a\node_modules
+Navegador: C:/Program Files/Google/Chrome/Application/chrome.exe
+
+=== 1. Auditoría de las 17 pantallas + mapa (claro y oscuro · 1440 px) ===
+00-mapa-light-1440                           JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+00-mapa-dark-1440                            JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+01-inicio-light-1440                         JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+01-inicio-dark-1440                          JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+02-proyectos-light-1440                      JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+02-proyectos-dark-1440                       JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+03-gantt-light-1440                          JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+03-gantt-dark-1440                           JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+04-tabla-light-1440                          JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+04-tabla-dark-1440                           JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+05-kanban-light-1440                         JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+05-kanban-dark-1440                          JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+06-tarea-light-1440                          JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+06-tarea-dark-1440                           JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+07-cartera-light-1440                        JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+07-cartera-dark-1440                         JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+08-recursos-light-1440                       JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+08-recursos-dark-1440                        JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+09-horas-light-1440                          JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+09-horas-dark-1440                           JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+10-costes-light-1440                         JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+10-costes-dark-1440                          JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+11-plantillas-light-1440                     JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+11-plantillas-dark-1440                      JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+12-notificaciones-light-1440                 JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+12-notificaciones-dark-1440                  JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+13-import-export-light-1440                  JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+13-import-export-dark-1440                   JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+14-ajustes-proyecto-light-1440               JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+14-ajustes-proyecto-dark-1440                JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+15-admin-light-1440                          JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+15-admin-dark-1440                           JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+16-auditoria-light-1440                      JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+16-auditoria-dark-1440                       JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+17-integraciones-light-1440                  JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+17-integraciones-dark-1440                   JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+
+=== 2. Pasada multiresolución (1280, 1920 y móvil 390 px) ===
+vp-gantt-1280                                JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+vp-gantt-1920                                JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+vp-gantt-movil-390                           JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+vp-inicio-movil-390                          JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+vp-tabla-1280                                JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+vp-kanban-movil-390                          JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+vp-recursos-1920                             JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+vp-costes-1280                               JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+
+=== 3. Los 7 estados obligatorios de interfaz (?estado=...) ===
+estado-cargando-1440                         JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+estado-vacio-1440                            JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+estado-error-1440                            JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+estado-sinpermiso-1440                       JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+estado-sesion-1440                           JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+estado-conflicto-1440                        JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+estado-pendiente-1440                        JS:0  HTTP4xx:0  axe(S/C):0  axe(M/m):0
+
+=== 4. Comprobaciones RBAC y flujos interactivos ===
+   ✓ Costes (rol Miembro): estado sinpermiso limpio sin exponer EUR ni cifras
+   ✓ Costes (rol Admin IT): estado sinpermiso sin exponer cifras
+   ✓ Tabla (rol Miembro): columnas económicas omitidas del DOM
+   ✓ Detalle tarea (rol Miembro): historial RF-33 oculta diffs económicos
+   ✓ Admin (rol Miembro): bloqueo sinpermiso
+   ✓ Admin (rol Admin IT): autoasignación de grant bloqueada
+   ✓ Kanban: mover 2.3 a En curso abre diálogo de impacto CH-03
+   ✓ Importación: paso 3 detecta ciclo y vínculo a grupo, y bloquea avance hasta corregir
+   ✓ Gantt: Alt+→ sobre 4.2 abre diálogo de impacto con conflicto nuevo y confirmación bloqueada
+   ✓ Proyectos: diálogo «Crear proyecto» añade proyecto nuevo a la tabla
+   ✓ Horas: envío de hoja semanal cambia estado a Enviada
+
+=== 5. Validación de los 7 recorridos guiados (todos los pasos, cero errores JS/404) ===
+   ✓ Recorrido 01 · Creación de proyecto (3/3 pasos)
+   ✓ Recorrido 02 · Planificación y reprogramación (3/3 pasos)
+   ✓ Recorrido 03 · Ejecución de tareas (4/4 pasos)
+   ✓ Recorrido 04 · Gestión de recursos (2/2 pasos)
+   ✓ Recorrido 05 · Registro de horas (2/2 pasos)
+   ✓ Recorrido 06 · Seguimiento económico (3/3 pasos)
+   ✓ Recorrido 07 · Administración y permisos (4/4 pasos)
+
+=== Resumen ===
+Cargas auditadas (axe-core + errores JS + HTTP): 51
+Capturas JPEG guardadas en docs/f0/assets/ap-002b/: 57
+Galería generada: docs/f0/AP-002b-galeria.html
+OK: 0 errores JS, 0 HTTP 4xx, 0 violaciones axe serias/críticas y todos los flujos/recorridos verificados

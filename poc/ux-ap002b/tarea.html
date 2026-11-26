@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>06 · Detalle de tarea — PPV2 · Asserta Projects</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../ux-ap002a/shared/base.css">
+<link rel="stylesheet" href="../ux-ap002a/c/c.css">
+<link rel="stylesheet" href="shared/ap002b.css">
+</head>
+<body>
+<nav id="nav"></nav>
+<main class="page-main">
+  <div id="masthead-slot"></div>
+  <div class="toolbar" id="toolbar" role="toolbar" aria-label="Selección de tarea y pestañas"></div>
+  <div class="page-scroll" id="content"></div>
+</main>
+<script type="module">
+import { el, icon, avatar, fmtShort, fmtStamp, signed, CLASS, TYPE, days } from '../ux-ap002a/shared/util.js';
+import { DEMO, TASK_EXT, HISTORY_EXT, RATES, fmtEur } from './shared/data-ext.js';
+import { mountShell, makeMasthead, projectTabs, readItem, statusBadge, extendedStateBlock } from './shared/shell.js';
+
+const { role, bindNavToggle, toast, estado } = mountShell({ navKey: 'tarea', projectCode: 'PPV2' });
+const q = new URLSearchParams(location.search);
+const validTasks = DEMO.order.filter((id) => DEMO.meta[id].kind !== 'group');
+let taskId = validTasks.includes(q.get('task')) ? q.get('task') : '2.1';
+const hashTab = location.hash.replace('#', '');
+let activeTab = ['detalle', 'comentarios', 'horas', 'historial'].includes(hashTab) ? hashTab : 'detalle';
+
+const commentsStore = structuredClone(Object.fromEntries(Object.entries(TASK_EXT).map(([k, v]) => [k, v.comments ?? []])));
+const hoursStore = {
+  '2.1': [
+    { date: '2026-11-25', person: 'MP', mins: 360, status: 'enviada', note: 'Contrato webhooks y reintentos idempotentes' },
+    { date: '2026-11-24', person: 'MP', mins: 360, status: 'aprobada', note: 'Validación esquemas integración ERP' },
+    { date: '2026-11-24', person: 'JO', mins: 240, status: 'enviada', note: 'Pruebas de carga en sandbox' },
+  ],
+  '2.2': [
+    { date: '2026-11-25', person: 'NE', mins: 480, status: 'enviada', note: 'Ajustes de contraste modo oscuro' },
+    { date: '2026-11-25', person: 'LF', mins: 210, status: 'borrador', note: 'Revisión funcional del prototipo' },
+  ],
+};
+
+function renderHeader() {
+  const m = DEMO.meta[taskId], t = DEMO.plan.tasks[taskId];
+  const { header, navBtn } = makeMasthead({
+    kickerParts: [el('a', { href: 'proyectos.html' }, '02 Proyectos'), el('span', {}, '/'), el('a', { href: 'gantt.html' }, 'PPV2'), el('span', {}, '/'), el('span', {}, `Tarea ${taskId}`)],
+    tabs: projectTabs('tarea', 'PPV2'),
+    title: `${taskId} · ${m.name}`,
+    dateline: [
+      el('span', {}, `${fmtShort(t.start)} → ${fmtShort(t.finish)}`),
+      el('span', {}, `Programación: ${CLASS[t.class]}`),
+      el('span', {}, `Holgura: ${t.totalFloat == null ? '—' : `${signed(t.totalFloat)} d`}`),
+    ],
+    reads: [
+      readItem('Progreso', `${t.progress ?? 0}%`),
+      readItem('Holgura', t.totalFloat == null ? '—' : `${signed(t.totalFloat)} d`, '', t.totalFloat < 0 ? 'danger' : t.totalFloat === 0 ? 'crit' : ''),
+      readItem('Revisión', String(DEMO.project.revision)),
+    ],
+  });
+  const slot = document.querySelector('#masthead-slot');
+  if (slot) slot.replaceWith(header);
+  else document.querySelector('header.masthead')?.replaceWith(header);
+  bindNavToggle(navBtn);
+}
+
+renderHeader();
+const toolbar = document.querySelector('#toolbar');
+const content = document.querySelector('#content');
+
+if (estado) {
+  toolbar.hidden = true;
+  content.replaceChildren(extendedStateBlock(estado));
+} else if (!role.caps.projectRead) {
+  toolbar.hidden = true;
+  content.replaceChildren(extendedStateBlock('sinpermiso', {
+    sinpermisoTitle: 'Admin IT no tiene permiso para consultar fichas de tareas',
+    sinpermisoBody: 'platform.admin no concede project.read ni financial.read.',
+    sinpermisoActions: [{ label: 'Ir a Administración', primary: true, href: 'admin.html' }],
+  }));
+} else {
+  const taskSelect = el('select', { 'aria-label': 'Cambiar tarea de PPV2', onchange: (e) => { taskId = e.target.value; renderHeader(); render(); } },
+    ...validTasks.map((id) => el('option', { value: id, selected: id === taskId }, `${id} · ${DEMO.meta[id].name}`))
+  );
+
+  const tabBtns = [
+    { id: 'detalle', label: 'Detalle' },
+    { id: 'comentarios', label: 'Comentarios' },
+    { id: 'horas', label: 'Horas' },
+    { id: 'historial', label: 'Historial (RF-33)' },
+  ];
+
+  function renderToolbar() {
+    toolbar.replaceChildren(
+      el('label', { class: 'field' }, icon('layers'), taskSelect),
+      el('div', { class: 'seg', role: 'tablist', 'aria-label': 'Secciones de la tarea' },
+        ...tabBtns.map((tb) => el('button', {
+          type: 'button', role: 'tab', 'aria-selected': String(activeTab === tb.id),
+          onclick: () => { activeTab = tb.id; renderToolbar(); render(); },
+        }, tb.label))
+      ),
+      el('span', { class: 'sp' }),
+      el('a', { class: 'btn', href: `gantt.html?task=${taskId}` }, icon('chart-gantt'), 'Ubicar en Gantt')
+    );
+  }
+
+  function highlightMentions(text) {
+    const parts = text.split(/(@[A-Z]{2})/g);
+    return parts.map((p) => (/^@[A-Z]{2}$/.test(p) ? el('span', { class: 'mention' }, p) : p));
+  }
+
+  function render() {
+    const m = DEMO.meta[taskId], t = DEMO.plan.tasks[taskId], inp = DEMO.input.tasks.find((x) => x.id === taskId), ext = TASK_EXT[taskId] ?? {};
+    const conflicts = DEMO.plan.conflicts.filter((c) => c.successorId === taskId);
+    const depsIn = DEMO.input.dependencies.filter((d) => d.successorId === taskId);
+    const depsOut = DEMO.input.dependencies.filter((d) => d.predecessorId === taskId);
+    const rate = RATES[m.responsible];
+    const estHours = m.effort ? m.effort / 60 : 0;
+    const planHours = ext.plannedHours ?? estHours;
+    const realHours = ext.actualHours ?? 0;
+
+    let tabContent;
+    if (activeTab === 'detalle') {
+      tabContent = el('div', { class: 'card' },
+        el('div', { class: 'card-h' }, el('h2', {}, 'Ficha y programación'), statusBadge(m.status)),
+        conflicts.length
+          ? el('div', { class: 'banner is-danger', role: 'alert' }, icon('triangle-alert'), el('div', {},
+              el('strong', {}, 'Conflicto de planificación reconocido'),
+              ...conflicts.map((c) => el('p', {}, `Empieza ${days(c.deficitDays)} antes de lo que exige ${c.dependencyId}. La fecha manual se mantiene intacta.`))
+            ))
+          : null,
+        el('dl', { class: 'p-dl' },
+          el('dt', {}, 'Responsable'), el('dd', {}, el('span', { class: 'p-person' }, avatar(DEMO.people, m.responsible, 'av-xs'), DEMO.people[m.responsible]?.name ?? 'Sin responsable')),
+          el('dt', {}, 'Colaboradores'), el('dd', {}, m.collaborators.length ? el('div', { class: 'p-people' }, ...m.collaborators.map((c) => el('span', { class: 'p-person' }, avatar(DEMO.people, c, 'av-xs'), DEMO.people[c].name))) : el('span', { class: 'dim' }, 'Sin colaboradores')),
+          el('dt', {}, 'Modo'), el('dd', {}, el('span', { class: 'badge' }, CLASS[t.class]), t.class === 'MANUAL' ? ' · Fecha fijada manualmente' : ' · Recálculo automático por motor'),
+          el('dt', {}, 'Fechas plan'), el('dd', { class: 'num' }, `${fmtShort(t.start)} – ${fmtShort(t.finish)}`),
+          el('dt', {}, 'Hechos reales'), el('dd', { class: 'num' }, inp?.actualStart ? `${fmtShort(inp.actualStart)} – ${inp.actualFinish ? fmtShort(inp.actualFinish) : 'en curso'}` : 'Sin inicio real registrado'),
+          el('dt', {}, 'Esfuerzo'), el('dd', { class: 'num' }, `Estimado: ${estHours} h · Planificado: ${planHours} h · Real: ${realHours} h`),
+          el('dt', {}, 'Enlace Jira'), el('dd', {}, ext.jira ? el('a', { class: 'badge badge-brand', href: 'integraciones.html#jira' }, icon('link-2'), `${ext.jira} (solo lectura · ${ext.jiraStatus ?? 'linkOnly'})`) : el('span', { class: 'dim' }, 'Sin vincular')),
+          role.caps.financialRead ? el('dt', {}, 'Coste est.') : null,
+          role.caps.financialRead ? el('dd', { class: 'num' }, rate?.eurHour != null ? `${fmtEur(estHours * rate.eurHour)} (${rate.eurHour.toFixed(2).replace('.', ',')} €/h · ${rate.version})` : el('span', { class: 'badge badge-warn' }, icon('triangle-alert'), 'Coste incompleto (sin tarifa)')) : null
+        ),
+        el('div', { class: 'grid-2', style: 'margin-top:8px' },
+          el('div', {},
+            el('h3', { style: 'font:500 11px/1 var(--font-mono);text-transform:uppercase;color:var(--text-3);margin-bottom:6px' }, 'Predecesoras'),
+            depsIn.length ? el('ul', { class: 'p-deps' }, ...depsIn.map((d) => el('li', {}, el('span', { class: 'g-code' }, d.predecessorId), el('span', {}, DEMO.meta[d.predecessorId].name), el('span', { class: 'dep-type', title: TYPE[d.type] }, `${d.type}${d.lagDays ? signed(d.lagDays) : ''}`)))) : el('p', { class: 'dim' }, 'Sin predecesoras')
+          ),
+          el('div', {},
+            el('h3', { style: 'font:500 11px/1 var(--font-mono);text-transform:uppercase;color:var(--text-3);margin-bottom:6px' }, 'Sucesoras'),
+            depsOut.length ? el('ul', { class: 'p-deps' }, ...depsOut.map((d) => el('li', {}, el('span', { class: 'g-code' }, d.successorId), el('span', {}, DEMO.meta[d.successorId].name), el('span', { class: 'dep-type', title: TYPE[d.type] }, `${d.type}${d.lagDays ? signed(d.lagDays) : ''}`)))) : el('p', { class: 'dim' }, 'Sin sucesoras')
+          )
+        )
+      );
+    } else if (activeTab === 'comentarios') {
+      const list = commentsStore[taskId] ?? [];
+      const ta = el('textarea', { id: 'new-comment', placeholder: 'Escribe un comentario operativo (usa @NE, @MP, @JO para mencionar)…', 'aria-label': 'Nuevo comentario' });
+      const form = el('form', { class: 'form-grid', onsubmit: (e) => {
+        e.preventDefault();
+        const txt = ta.value.trim();
+        if (!txt) return;
+        (commentsStore[taskId] ??= []).unshift({ id: `c-${Date.now()}`, at: new Date().toISOString(), actor: role.userId, body: txt });
+        toast('Comentario publicado (sanitizado en servidor · sin logs de cuerpo)');
+        render();
+      } },
+        el('div', { class: 'form-field full' }, el('label', { for: 'new-comment' }, 'Añadir comentario'), ta),
+        el('div', { class: 'form-field full', style: 'display:flex;justify-content:space-between;align-items:center' },
+          el('span', { class: 'form-help' }, 'Los comentarios se sanitizan en servidor y no se registran en logs de auditoría.'),
+          el('button', { type: 'submit', class: 'btn btn-primary' }, icon('send'), 'Publicar comentario')
+        )
+      );
+      tabContent = el('div', { class: 'card' },
+        el('div', { class: 'card-h' }, el('h2', {}, `Comentarios (${list.length})`)),
+        el('div', { class: 'banner is-warn', role: 'note' }, icon('shield-alert'), el('div', {},
+          el('strong', {}, 'Aviso de privacidad (R-08)'),
+          el('p', {}, 'No introduzcas datos clínicos, nombres de pacientes, motivos médicos ni credenciales en los comentarios de tareas.')
+        )),
+        el('div', { class: 'comments' }, ...(list.length ? list.map((c) => el('article', { class: 'comment' },
+          el('div', { class: 'comment-h' }, avatar(DEMO.people, c.actor, 'av-xs'), el('strong', {}, DEMO.people[c.actor]?.name ?? c.actor), el('span', { class: 'num dim' }, fmtStamp(c.at))),
+          el('p', {}, ...highlightMentions(c.body))
+        )) : [el('p', { class: 'dim' }, 'Aún no hay comentarios en esta tarea.')])),
+        form
+      );
+    } else if (activeTab === 'horas') {
+      const entries = hoursStore[taskId] ?? [];
+      tabContent = el('div', { class: 'card' },
+        el('div', { class: 'card-h' }, el('h2', {}, `Horas registradas (${realHours} h)`), el('a', { class: 'btn btn-primary', href: 'horas.html' }, icon('clock'), 'Ir a hoja semanal')),
+        entries.length
+          ? el('div', { class: 'tbl-wrap' }, el('table', { class: 'dtable' },
+              el('thead', {}, el('tr', {}, ...['Fecha', 'Recurso', 'Minutos / Horas', 'Estado', 'Detalle'].map((h) => el('th', { scope: 'col' }, h)))),
+              el('tbody', {}, ...entries.map((e) => el('tr', {},
+                el('td', { class: 'num-col' }, fmtShort(e.date)),
+                el('td', {}, el('span', { class: 'p-person' }, avatar(DEMO.people, e.person, 'av-xs'), DEMO.people[e.person]?.name)),
+                el('td', { class: 'num-col' }, `${e.mins} min (${(e.mins / 60).toFixed(1).replace('.', ',')} h)`),
+                el('td', {}, el('span', { class: `badge ${e.status === 'aprobada' ? 'badge-ok' : e.status === 'enviada' ? 'badge-brand' : ''}` }, e.status)),
+                el('td', {}, e.note)
+              )))
+            ))
+          : el('p', { class: 'dim' }, 'Esta tarea aún no tiene imputaciones de horas registradas.')
+      );
+    } else {
+      const allHist = HISTORY_EXT[taskId] ?? [{ at: '2026-10-28T10:00:00Z', actor: 'LF', what: 'Creó la tarea', rev: 3 }];
+      const visibleHist = allHist.filter((h) => !h.financial || role.caps.financialRead);
+      const hiddenCount = allHist.length - visibleHist.length;
+      tabContent = el('div', { class: 'card' },
+        el('div', { class: 'card-h' }, el('h2', {}, 'Historial funcional por revisión (RF-33)'), el('span', { class: 'badge' }, `${visibleHist.length} eventos`)),
+        hiddenCount > 0
+          ? el('div', { class: 'banner is-info' }, icon('lock'), el('div', {}, el('strong', {}, 'Campos económicos omitidos por permiso'), el('p', {}, 'Tu rol actual no tiene financial.read; las entradas de historial relativas a tarifas o importes no se envían al cliente.')))
+          : null,
+        el('ol', { class: 'p-hist' }, ...visibleHist.map((h) => el('li', {},
+          el('div', { class: 'h-meta' },
+            avatar(DEMO.people, h.actor, 'av-xs'),
+            el('strong', {}, DEMO.people[h.actor]?.name ?? h.actor),
+            el('span', { class: 'num dim' }, `${fmtStamp(h.at)} · r${h.rev}`),
+            h.financial ? el('span', { class: 'badge badge-brand' }, 'financial.read') : null
+          ),
+          el('p', {}, el('strong', {}, h.what), h.from ? `: ${h.from} → ${h.to}` : h.to ? `: ${h.to}` : ''),
+          h.impact ? el('p', { class: 'dim' }, `Impacto: ${h.impact}`) : null
+        )))
+      );
+    }
+
+    const sideCard = el('aside', { class: 'card', 'aria-label': 'Resumen acoplado de la tarea' },
+      el('div', { class: 'card-h' }, el('h3', {}, 'Contexto rápido'), el('span', { class: 'g-code' }, `PPV2 · ${taskId}`)),
+      el('div', { style: 'display:grid;gap:8px' },
+        el('div', { style: 'display:flex;justify-content:space-between;font-size:13px' }, el('span', { class: 'dim' }, 'Esfuerzo consumido'), el('span', { class: 'num' }, `${realHours} / ${estHours} h`)),
+        el('div', { class: `meter ${estHours && realHours > estHours ? 'is-warn' : ''}` }, el('i', { style: `width:${estHours ? Math.min(100, Math.round((realHours / estHours) * 100)) : 0}%` })),
+        el('p', { class: 'dim', style: 'font-size:12.5px' }, 'Los cambios de fecha o duración pasan siempre por vista previa y diálogo de impacto en el servidor.'),
+        el('div', { style: 'display:flex;flex-wrap:wrap;gap:6px;margin-top:4px' },
+          el('a', { class: 'btn', href: `gantt.html?task=${taskId}` }, 'Ver en Gantt'),
+          el('a', { class: 'btn', href: 'kanban.html' }, 'Ver en Kanban'),
+          role.caps.financialRead ? el('a', { class: 'btn', href: 'costes.html' }, 'Ver costes') : null
+        )
+      )
+    );
+
+    content.replaceChildren(el('div', { class: 'page-stack' }, el('div', { class: 'grid-split' }, tabContent, sideCard)));
+  }
+
+  renderToolbar();
+  render();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>08 · Recursos y capacidad — Asserta Projects</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../ux-ap002a/shared/base.css">
+<link rel="stylesheet" href="../ux-ap002a/c/c.css">
+<link rel="stylesheet" href="shared/ap002b.css">
+</head>
+<body>
+<nav id="nav"></nav>
+<main class="page-main">
+  <div id="masthead-slot"></div>
+  <div class="toolbar" id="toolbar" role="toolbar" aria-label="Controles de capacidad y recursos"></div>
+  <div class="page-scroll" id="content"></div>
+</main>
+<script type="module">
+import { el, icon, avatar } from '../ux-ap002a/shared/util.js';
+import { PEOPLE_EXT, HEATMAP_DAYS, RESOURCE_ROWS } from './shared/data-ext.js';
+import { mountShell, makeMasthead, readItem, extendedStateBlock } from './shared/shell.js';
+
+const { role, bindNavToggle, estado } = mountShell({ navKey: 'recursos' });
+let mode = 'diario', teamFilter = '', redactRestricted = true;
+let selected = { person: 'JO', dayIdx: 1 };
+
+const { header, navBtn } = makeMasthead({
+  kickerParts: [el('span', {}, '04 Recursos y capacidad')],
+  title: 'Recursos y capacidad',
+  dateline: [
+    el('span', {}, 'Capacidad base: 8 h/día (calendario L–V · Europe/Madrid)'),
+    el('span', {}, 'La sobrecarga avisa sin reprogramar fechas automáticamente'),
+    el('span', {}, 'Ausencias con código mínimo (sin motivos médicos)'),
+  ],
+  reads: [
+    readItem('Recursos', String(RESOURCE_ROWS.length), '6 + 1 virtual'),
+    readItem('Sobrecargas', '5', 'días-persona', 'warn', 'Jornadas > 8 h/día en MP (9,5 h) y JO (10 h / 9 h).'),
+    readItem('Ausencias', '3', 'días', '', 'Códigos VAC / AUS sin información clínica.'),
+  ],
+});
+document.querySelector('#masthead-slot').replaceWith(header);
+bindNavToggle(navBtn);
+
+const toolbar = document.querySelector('#toolbar');
+const content = document.querySelector('#content');
+
+if (estado) {
+  toolbar.hidden = true;
+  content.replaceChildren(extendedStateBlock(estado));
+} else if (role.caps.isItAdmin) {
+  toolbar.hidden = true;
+  content.replaceChildren(extendedStateBlock('sinpermiso', {
+    sinpermisoTitle: 'Admin IT no accede al desglose de asignaciones de proyectos',
+    sinpermisoBody: 'La gestión de equipos y calendarios base está disponible en Administración sin exponer la carga de tareas de proyectos.',
+    sinpermisoActions: [{ label: 'Ir a Administración', primary: true, href: 'admin.html' }],
+  }));
+} else {
+  const teams = [...new Set(RESOURCE_ROWS.map((r) => r.team))];
+  const selTeam = el('select', { 'aria-label': 'Filtrar por equipo', onchange: (e) => { teamFilter = e.target.value; render(); } },
+    el('option', { value: '' }, 'Todos los equipos'),
+    ...teams.map((t) => el('option', { value: t }, t))
+  );
+  const segMode = el('div', { class: 'seg', role: 'group', 'aria-label': 'Granularidad de carga' },
+    ...[['diario', 'Diario (S48–S49)'], ['semanal', 'Semanal']].map(([m, l]) =>
+      el('button', { type: 'button', 'aria-pressed': String(mode === m), onclick: () => { mode = m; renderToolbar(); render(); } }, l)
+    )
+  );
+  const redactBtn = el('button', { type: 'button', class: 'chip', 'aria-pressed': String(redactRestricted), onclick: () => { redactRestricted = !redactRestricted; renderToolbar(); render(); } }, icon('lock'), 'Vista gestor de recursos (redacta AUDA)');
+
+  function renderToolbar() {
+    for (const b of segMode.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.textContent.toLowerCase().startsWith(mode)));
+    redactBtn.setAttribute('aria-pressed', String(redactRestricted));
+  }
+  toolbar.replaceChildren(
+    segMode,
+    el('label', { class: 'field' }, icon('users'), selTeam),
+    redactBtn,
+    el('span', { class: 'sp' }),
+    el('span', { class: 'badge badge-warn' }, icon('triangle-alert'), 'Sobrecarga > 8 h/día (solo aviso)')
+  );
+
+  function fmtItem(text) {
+    if (redactRestricted && text.startsWith('AUDA')) {
+      const m = text.match(/\(([^)]+)\)/);
+      return `Proyecto restringido (${m ? m[1] : '2 h'})`;
+    }
+    return text;
+  }
+
+  function render() {
+    const rows = RESOURCE_ROWS.filter((r) => !teamFilter || r.team === teamFilter);
+    let table;
+    if (mode === 'diario') {
+      table = el('table', { class: 'hmap' },
+        el('thead', {}, el('tr', {},
+          el('th', { scope: 'col' }, 'Recurso / Equipo'),
+          ...HEATMAP_DAYS.map((d) => el('th', { scope: 'col', class: d.today ? 'today' : '' }, `${d.dow} ${d.lbl}`, el('div', { class: 'dim', style: 'font-size:10px' }, d.today ? 'HOY' : d.wk)))
+        )),
+        el('tbody', {}, ...rows.map((r) => {
+          const p = PEOPLE_EXT[r.id];
+          return el('tr', {},
+            el('td', {},
+              el('div', { style: 'display:flex;align-items:center;gap:8px' },
+                r.virtual ? el('span', { class: 'av av-sm', title: p.name, role: 'img', 'aria-label': p.name }, 'QV') : avatar(PEOPLE_EXT, r.id, 'av-sm'),
+                el('div', {},
+                  el('div', { style: 'font-weight:600;display:flex;align-items:center;gap:6px' }, p.name, r.virtual ? el('span', { class: 'badge' }, 'Virtual') : null),
+                  el('div', { class: 'dim', style: 'font-size:11.5px' }, `${r.team} · ${r.capDay} h/día`)
+                )
+              )
+            ),
+            ...r.days.map((d, idx) => {
+              const cls = d.abs ? 'abs' : d.h > r.capDay ? 'over' : d.h === r.capDay ? 'high' : d.h > 0 ? 'ok' : '';
+              const label = d.abs ? d.abs : `${String(d.h).replace('.', ',')}h`;
+              return el('td', {},
+                el('button', {
+                  type: 'button',
+                  class: `h-cell ${cls}`,
+                  'aria-label': `${p.name} el ${HEATMAP_DAYS[idx].iso}: ${d.abs ? `ausencia ${d.abs}` : `${d.h} horas de ${r.capDay}`}`,
+                  onclick: () => { selected = { person: r.id, dayIdx: idx }; render(); },
+                }, label)
+              );
+            })
+          );
+        }))
+      );
+    } else {
+      table = el('table', { class: 'hmap' },
+        el('thead', {}, el('tr', {},
+          el('th', { scope: 'col' }, 'Recurso / Equipo'),
+          el('th', { scope: 'col' }, 'Semana 48 (23–27 nov)'),
+          el('th', { scope: 'col' }, 'Semana 49 (30 nov–04 dic)'),
+          el('th', { scope: 'col' }, 'Total 2 semanas')
+        )),
+        el('tbody', {}, ...rows.map((r) => {
+          const p = PEOPLE_EXT[r.id];
+          const w1 = r.days.slice(0, 5).reduce((s, d) => s + d.h, 0);
+          const w2 = r.days.slice(5, 10).reduce((s, d) => s + d.h, 0);
+          const cap1 = r.days.slice(0, 5).filter((d) => !d.abs).length * r.capDay;
+          const cap2 = r.days.slice(5, 10).filter((d) => !d.abs).length * r.capDay;
+          return el('tr', {},
+            el('td', {}, el('span', { class: 'p-person' }, avatar(PEOPLE_EXT, r.id, 'av-xs'), p.name, r.virtual ? el('span', { class: 'badge' }, 'Virtual') : null)),
+            el('td', {}, el('span', { class: `h-cell ${w1 > cap1 ? 'over' : w1 === cap1 ? 'high' : 'ok'}` }, `${w1} / ${cap1} h`)),
+            el('td', {}, el('span', { class: `h-cell ${w2 > cap2 ? 'over' : w2 === cap2 ? 'high' : 'ok'}` }, `${w2} / ${cap2} h`)),
+            el('td', { class: 'num' }, `${w1 + w2} / ${cap1 + cap2} h`)
+          );
+        }))
+      );
+    }
+
+    const selRow = RESOURCE_ROWS.find((r) => r.id === selected.person) ?? RESOURCE_ROWS[0];
+    const selDay = selRow.days[selected.dayIdx];
+    const selDate = HEATMAP_DAYS[selected.dayIdx];
+    const selPerson = PEOPLE_EXT[selRow.id];
+
+    content.replaceChildren(
+      el('div', { class: 'page-stack' },
+        el('div', { class: 'banner is-warn', role: 'note' },
+          icon('triangle-alert'),
+          el('div', {},
+            el('strong', {}, 'Sobrecargas detectadas en MP (9,5 h/d) y JO (10 h/d) — el motor no reprograma fechas automáticamente'),
+            el('p', {}, 'Las alertas de capacidad ayudan a equilibrar asignaciones manualmente o sustituir el recurso virtual QA-V sin alterar las fechas del plan de forma silenciosa.')
+          )
+        ),
+        el('div', { class: 'tbl-wrap' }, table),
+        el('div', { class: 'grid-2' },
+          el('section', { class: 'card', 'aria-labelledby': 'h-det' },
+            el('div', { class: 'card-h' },
+              el('h2', { id: 'h-det' }, `Desglose: ${selPerson.name} · ${selDate.dow} ${selDate.lbl}`),
+              selDay.abs
+                ? el('span', { class: 'badge' }, `Ausencia ${selDay.abs}`)
+                : el('span', { class: `badge ${selDay.h > selRow.capDay ? 'badge-warn' : 'badge-ok'}` }, `${selDay.h} h / ${selRow.capDay} h`)
+            ),
+            selDay.items.length
+              ? el('ul', { class: 'p-deps' }, ...selDay.items.map((it) => el('li', { style: 'grid-template-columns:1fr' }, el('span', {}, fmtItem(it)))))
+              : el('p', { class: 'dim' }, 'Sin horas asignadas en esta jornada.'),
+            selDay.restricted && redactRestricted
+              ? el('p', { class: 'form-help' }, 'Nota de confidencialidad: el gestor de recursos ve las horas ocupadas de AUDA como «Proyecto restringido» sin revelar nombre ni tareas.')
+              : null
+          ),
+          el('section', { class: 'card', 'aria-labelledby': 'h-leg' },
+            el('div', { class: 'card-h' }, el('h2', { id: 'h-leg' }, 'Leyenda y privacidad de ausencias')),
+            el('div', { style: 'display:flex;flex-wrap:wrap;gap:8px' },
+              el('span', { class: 'h-cell ok' }, '1–7 h · Disponible'),
+              el('span', { class: 'h-cell high' }, '8 h · Completo'),
+              el('span', { class: 'h-cell over' }, '> 8 h · Sobrecarga'),
+              el('span', { class: 'h-cell abs' }, 'VAC / AUS · Ausencia')
+            ),
+            el('p', { class: 'dim', style: 'font-size:13px' }, 'Las ausencias se modelan exclusivamente con código mínimo (VAC vacaciones, AUS ausencia general). Prohibido registrar motivos médicos o bajas clínicas (R-08).')
+          )
+        )
+      )
+    );
+  }
+  render();
+}
+</script>
+</body>
+</html>

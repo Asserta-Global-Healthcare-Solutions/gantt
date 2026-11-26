@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>12 · Notificaciones y preferencias — Asserta Projects</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../ux-ap002a/shared/base.css">
+<link rel="stylesheet" href="../ux-ap002a/c/c.css">
+<link rel="stylesheet" href="shared/ap002b.css">
+</head>
+<body>
+<nav id="nav"></nav>
+<main class="page-main">
+  <div id="masthead-slot"></div>
+  <div class="toolbar" id="toolbar" role="toolbar" aria-label="Filtros de notificaciones"></div>
+  <div class="page-scroll" id="content"></div>
+</main>
+<script type="module">
+import { el, icon, avatar, fmtStamp } from '../ux-ap002a/shared/util.js';
+import { DEMO, NOTIFICATIONS_EXT } from './shared/data-ext.js';
+import { mountShell, makeMasthead, readItem, extendedStateBlock, DEFAULT_PREFS } from './shared/shell.js';
+
+const { prefs, bindNavToggle, toast, estado } = mountShell({ navKey: 'notificaciones' });
+const notes = structuredClone(NOTIFICATIONS_EXT);
+let filterKind = '', onlyUnread = false;
+
+const unreadCount = () => notes.filter((n) => n.unread).length;
+
+function buildHeader() {
+  const { header, navBtn } = makeMasthead({
+    kickerParts: [el('span', {}, '08 Notificaciones y preferencias')],
+    title: 'Notificaciones y preferencias (RF-34)',
+    dateline: [
+      el('span', {}, 'Bandeja interna + preferencias de usuario versionadas (schemaVersion: 1)'),
+      el('span', {}, 'Adaptación al viewport no destructiva (1280/390 no borra tu configuración de 1920)'),
+    ],
+    reads: [
+      readItem('No leídas', String(unreadCount()), '', unreadCount() ? 'warn' : ''),
+      readItem('Total avisos', String(notes.length)),
+      readItem('Esquema RF-34', `v${prefs.data.schemaVersion}`),
+    ],
+  });
+  const slot = document.querySelector('#masthead-slot');
+  if (slot) slot.replaceWith(header);
+  else document.querySelector('header.masthead')?.replaceWith(header);
+  bindNavToggle(navBtn);
+}
+
+buildHeader();
+const toolbar = document.querySelector('#toolbar');
+const content = document.querySelector('#content');
+
+if (estado) {
+  toolbar.hidden = true;
+  content.replaceChildren(extendedStateBlock(estado));
+} else {
+  const kinds = [['', 'Todas'], ['mencion', 'Menciones'], ['plan', 'Plan'], ['asignacion', 'Asignaciones'], ['vencimiento', 'Vencimientos']];
+
+  function renderToolbar() {
+    toolbar.replaceChildren(
+      el('div', { class: 'chips', role: 'group', 'aria-label': 'Tipo de notificación' },
+        ...kinds.map(([k, l]) => el('button', { type: 'button', class: 'chip', 'aria-pressed': String(filterKind === k), onclick: () => { filterKind = k; renderToolbar(); render(); } }, l))
+      ),
+      el('button', { type: 'button', class: 'chip', 'aria-pressed': String(onlyUnread), onclick: () => { onlyUnread = !onlyUnread; renderToolbar(); render(); } }, 'Solo no leídas'),
+      el('span', { class: 'sp' }),
+      el('button', { type: 'button', class: 'btn', onclick: () => { for (const n of notes) n.unread = false; buildHeader(); render(); toast('Todas las notificaciones marcadas como leídas'); } }, icon('check-circle-2'), 'Marcar todas leídas')
+    );
+  }
+
+  function render() {
+    const visible = notes.filter((n) => (!filterKind || n.kind === filterKind) && (!onlyUnread || n.unread));
+    const kindLabel = { mencion: 'Mención', plan: 'Plan', asignacion: 'Asignación', vencimiento: 'Vencimiento' };
+
+    const inbox = el('section', { class: 'card', 'aria-labelledby': 'h-inbox' },
+      el('div', { class: 'card-h' }, el('h2', { id: 'h-inbox' }, `Bandeja de avisos (${visible.length})`), el('span', { class: 'badge' }, `${unreadCount()} sin leer`)),
+      visible.length
+        ? el('ul', { class: 'notes' }, ...visible.map((n) => el('li', { class: n.unread ? 'unread' : '' },
+            n.actor ? avatar(DEMO.people, n.actor, 'av-sm') : el('span', { class: 'av av-sm' }, icon('calendar-clock')),
+            el('div', {},
+              el('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' },
+                el('b', {}, n.actor ? DEMO.people[n.actor]?.name : 'Recordatorio automático'),
+                el('span', { class: 'badge' }, kindLabel[n.kind] ?? n.kind),
+                el('span', { class: 'g-code' }, n.project),
+                el('span', { class: 'num dim', style: 'margin-left:auto' }, fmtStamp(n.at))
+              ),
+              el('p', { style: 'margin-top:4px' }, n.text),
+              n.quote ? el('p', { class: 'q' }, `«${n.quote}»`) : null,
+              el('div', { style: 'display:flex;gap:8px;margin-top:6px;flex-wrap:wrap' },
+                el('a', { class: 'btn', style: 'min-height:26px;font-size:12px', href: n.href }, icon('external-link'), 'Abrir destino'),
+                n.unread ? el('button', { type: 'button', class: 'btn btn-ghost', style: 'min-height:26px;font-size:12px', onclick: () => { n.unread = false; buildHeader(); render(); toast('Notificación marcada como leída'); } }, icon('check'), 'Marcar leída') : null
+              )
+            )
+          )))
+        : el('p', { class: 'dim' }, 'No hay avisos que coincidan con los filtros seleccionados.')
+    );
+
+    const p = prefs.data;
+    const prefPanel = el('aside', { class: 'card', 'aria-labelledby': 'h-prefs' },
+      el('div', { class: 'card-h' },
+        el('div', {}, el('span', { class: 'eyebrow-n' }, 'RF-34 · P-29'), el('h2', { id: 'h-prefs' }, 'Preferencias de usuario')),
+        el('button', { type: 'button', class: 'btn', onclick: () => {
+          prefs.reset();
+          document.documentElement.dataset.density = DEFAULT_PREFS.density;
+          toast('Preferencias RF-34 restablecidas (/api/v1/me/preferences/reset)');
+          location.reload();
+        } }, icon('rotate-cw'), 'Restablecer')
+      ),
+      el('div', { class: 'form-grid' },
+        el('div', { class: 'form-field' },
+          el('label', { for: 'pr-density' }, 'Densidad global'),
+          el('select', { id: 'pr-density', onchange: (e) => { prefs.save({ density: e.target.value }); document.documentElement.dataset.density = e.target.value; toast(`Densidad guardada: ${e.target.value}`); } },
+            el('option', { value: 'estandar', selected: p.density === 'estandar' }, 'Estándar (36 px)'),
+            el('option', { value: 'compacta', selected: p.density === 'compacta' }, 'Compacta (28 px)')
+          )
+        ),
+        el('div', { class: 'form-field' },
+          el('label', { for: 'pr-zoom' }, 'Zoom por defecto'),
+          el('select', { id: 'pr-zoom', onchange: (e) => { prefs.save({ defaultZoom: e.target.value }); toast(`Zoom global guardado: ${e.target.value}`); } },
+            ...[['dia', 'Día'], ['semana', 'Semana'], ['mes', 'Mes']].map(([v, l]) => el('option', { value: v, selected: p.defaultZoom === v }, l))
+          )
+        ),
+        el('div', { class: 'form-field' },
+          el('label', { for: 'pr-panel' }, 'Modo de panel Gantt'),
+          el('select', { id: 'pr-panel', onchange: (e) => { prefs.save({ panel: e.target.value }); toast(`Modo panel guardado: ${e.target.value}`); } },
+            ...[['dock', 'Acoplado (auto-flotante <480 px)'], ['float', 'Flotante'], ['closed', 'Cerrado']].map(([v, l]) => el('option', { value: v, selected: p.panel === v }, l))
+          )
+        ),
+        el('div', { class: 'form-field' },
+          el('label', { for: 'pr-ppv2-zoom' }, 'Zoom específico · PPV2'),
+          el('select', { id: 'pr-ppv2-zoom', onchange: (e) => { prefs.save({ projectZoom: { ...p.projectZoom, PPV2: e.target.value } }); toast(`Zoom específico PPV2: ${e.target.value}`); } },
+            ...[['dia', 'Día'], ['semana', 'Semana'], ['mes', 'Mes']].map(([v, l]) => el('option', { value: v, selected: (p.projectZoom?.PPV2 ?? 'dia') === v }, l))
+          )
+        ),
+        el('div', { class: 'form-field full' },
+          el('span', { class: 'lbl' }, 'Canales de aviso'),
+          ...[['mentions', 'Menciones @usuario en comentarios'], ['plan', 'Cambios de plan que desplacen mis tareas'], ['assignments', 'Nuevas asignaciones o hojas pendientes'], ['due', 'Recordatorios de vencimientos y hitos'], ['teamsDigest', 'Resumen diario en Teams (payload mínimo, sin detalles sensibles)']].map(([k, lbl]) =>
+            el('label', { class: 'form-check' },
+              el('input', { type: 'checkbox', checked: Boolean(p.notifications[k]), onchange: (e) => { p.notifications[k] = e.target.checked; prefs.save({ notifications: p.notifications }); toast('Preferencia de avisos actualizada'); } }),
+              lbl
+            )
+          )
+        )
+      )
+    );
+
+    content.replaceChildren(el('div', { class: 'page-stack' }, el('div', { class: 'grid-split' }, inbox, prefPanel)));
+  }
+
+  renderToolbar();
+  render();
+}
+</script>
+</body>
+</html>

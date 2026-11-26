@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>09 · Registro de horas — Asserta Projects</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../ux-ap002a/shared/base.css">
+<link rel="stylesheet" href="../ux-ap002a/c/c.css">
+<link rel="stylesheet" href="shared/ap002b.css">
+</head>
+<body>
+<nav id="nav"></nav>
+<main class="page-main">
+  <div id="masthead-slot"></div>
+  <div class="toolbar" id="toolbar" role="toolbar" aria-label="Acciones de la hoja semanal"></div>
+  <div class="page-scroll" id="content"></div>
+</main>
+<dialog class="modal" id="dlg-reopen" aria-labelledby="reopen-title"></dialog>
+<script type="module">
+import { el, icon, avatar } from '../ux-ap002a/shared/util.js';
+import { DEMO, TIMESHEET_LF, TIMESHEET_QUEUE, fmtHours } from './shared/data-ext.js';
+import { mountShell, makeMasthead, readItem, extendedStateBlock } from './shared/shell.js';
+
+const { role, bindNavToggle, toast, estado } = mountShell({ navKey: 'horas' });
+const sheet = structuredClone(TIMESHEET_LF);
+const queue = structuredClone(TIMESHEET_QUEUE);
+let validationError = '';
+
+const STATUS_META = {
+  borrador: { label: 'Borrador', cls: '' },
+  enviada: { label: 'Enviada (pendiente de aprobación)', cls: 'badge-brand' },
+  aprobada: { label: 'Aprobada (tarifa congelada)', cls: 'badge-ok' },
+  reabierta: { label: 'Reabierta (requiere corrección)', cls: 'badge-warn' },
+};
+
+const totalMins = () => sheet.rows.reduce((s, r) => s + r.mins.reduce((a, b) => a + b, 0), 0);
+
+function buildHeader() {
+  const { header, navBtn } = makeMasthead({
+    kickerParts: [el('span', {}, '05 Registro de horas'), el('span', {}, '/'), el('span', {}, sheet.week)],
+    title: `Hoja semanal · ${role.name}`,
+    dateline: [
+      el('span', {}, 'Imputación de esfuerzo a tareas de proyecto (en minutos positivos)'),
+      el('span', {}, 'Flujo: Borrador → Enviada → Aprobada → Reabierta (con motivo)'),
+    ],
+    reads: [
+      readItem('Total S48', fmtHours(totalMins()), `${totalMins()} min`),
+      readItem('Estado hoja', STATUS_META[sheet.status].label.split(' ')[0]),
+      role.caps.approveTime ? readItem('Por aprobar', String(queue.filter((q) => q.status === 'enviada').length), 'hojas', 'warn') : null,
+    ].filter(Boolean),
+  });
+  const slot = document.querySelector('#masthead-slot');
+  if (slot) slot.replaceWith(header);
+  else document.querySelector('header.masthead')?.replaceWith(header);
+  bindNavToggle(navBtn);
+}
+
+buildHeader();
+const toolbar = document.querySelector('#toolbar');
+const content = document.querySelector('#content');
+const dlgReopen = document.querySelector('#dlg-reopen');
+
+if (estado) {
+  toolbar.hidden = true;
+  content.replaceChildren(extendedStateBlock(estado));
+} else if (role.caps.isItAdmin) {
+  toolbar.hidden = true;
+  content.replaceChildren(extendedStateBlock('sinpermiso', {
+    sinpermisoTitle: 'Admin IT no imputa ni aprueba horas de proyectos',
+    sinpermisoBody: 'Las hojas de horas pertenecen a miembros y gestores con asignación a proyectos.',
+    sinpermisoActions: [{ label: 'Ir a Administración', primary: true, href: 'admin.html' }],
+  }));
+} else {
+  function submitSheet() {
+    validationError = '';
+    const hasNegative = sheet.rows.some((r) => r.mins.some((m) => m < 0 || !Number.isFinite(m)));
+    if (hasNegative) { validationError = 'Todos los valores deben ser minutos enteros positivos (≥ 0).'; render(); return; }
+    if (totalMins() <= 0) { validationError = 'Introduce al menos una entrada con minutos positivos (> 0) antes de enviar la hoja.'; render(); return; }
+    sheet.status = 'enviada';
+    sheet.reopenReason = null;
+    buildHeader();
+    render();
+    toast('Hoja semanal S48 enviada para aprobación');
+  }
+
+  function openReopenModal(target, isOwn = false) {
+    const reasonInput = el('textarea', { id: 'reopen-reason', required: true, placeholder: 'Explica el motivo obligatorio para reabrir la hoja (quedará registrado en historial)…' });
+    const form = el('form', { id: 'f-reopen', class: 'form-grid', onsubmit: (e) => {
+      e.preventDefault();
+      const txt = reasonInput.value.trim();
+      if (txt.length < 6) { toast('Debes indicar un motivo explícito (mínimo 6 caracteres)'); return; }
+      target.status = 'reabierta';
+      target.reopenReason = txt;
+      dlgReopen.close();
+      buildHeader();
+      render();
+      toast(isOwn ? 'Hoja reabierta con motivo registrado' : `Hoja de ${DEMO.people[target.person]?.name} reabierta`);
+    } },
+      el('div', { class: 'form-field full' }, el('label', { for: 'reopen-reason' }, 'Motivo de reapertura (obligatorio)'), reasonInput)
+    );
+    dlgReopen.replaceChildren(
+      el('header', {}, el('p', { class: 'eyebrow' }, 'Flujo de horas · Reapertura'), el('h2', { id: 'reopen-title' }, isOwn ? 'Reabrir hoja S48' : `Reabrir hoja de ${DEMO.people[target.person]?.name}`)),
+      el('div', { class: 'm-body' }, form),
+      el('footer', {},
+        el('button', { type: 'button', class: 'btn', onclick: () => dlgReopen.close() }, 'Cancelar'),
+        el('button', { type: 'submit', form: 'f-reopen', class: 'btn btn-primary' }, 'Confirmar reapertura')
+      )
+    );
+    dlgReopen.showModal();
+  }
+
+  function render() {
+    const editable = sheet.status === 'borrador' || sheet.status === 'reabierta';
+    const dayTotals = [0, 1, 2, 3, 4].map((d) => sheet.rows.reduce((s, r) => s + r.mins[d], 0));
+    const st = STATUS_META[sheet.status];
+
+    toolbar.replaceChildren(
+      el('span', { class: `badge ${st.cls}` }, st.label),
+      el('span', { class: 'sp' }),
+      editable
+        ? el('button', { type: 'button', class: 'btn btn-primary', onclick: submitSheet }, icon('send'), 'Enviar hoja para aprobación')
+        : null,
+      sheet.status === 'enviada'
+        ? el('button', { type: 'button', class: 'btn btn-primary', onclick: () => { sheet.status = 'aprobada'; buildHeader(); render(); toast('Hoja S48 aprobada · tarifa congelada (v2)'); } }, icon('check'), 'Simular aprobación')
+        : null,
+      sheet.status === 'aprobada' || sheet.status === 'enviada'
+        ? el('button', { type: 'button', class: 'btn', onclick: () => openReopenModal(sheet, true) }, icon('rotate-cw'), 'Reabrir con motivo')
+        : null
+    );
+
+    content.replaceChildren(
+      el('div', { class: 'page-stack' },
+        el('div', { class: 'banner is-info', role: 'note' },
+          icon('info'),
+          el('div', {},
+            el('strong', {}, 'Imputación de esfuerzo a proyectos — NO es registro de jornada ni fichaje laboral'),
+            el('p', {}, 'Este módulo registra minutos imputados a tareas para seguimiento de esfuerzo y costes aprobados. No sustituye al sistema oficial de control horario ni registra entradas/salidas laborales.')
+          )
+        ),
+        validationError ? el('div', { class: 'banner is-danger', role: 'alert' }, icon('triangle-alert'), el('div', {}, el('strong', {}, 'Validación de minutos'), el('p', {}, validationError))) : null,
+        sheet.reopenReason ? el('div', { class: 'banner is-warn', role: 'status' }, icon('rotate-cw'), el('div', {}, el('strong', {}, 'Hoja reabierta · motivo registrado'), el('p', {}, sheet.reopenReason))) : null,
+        el('section', { 'aria-labelledby': 'h-myts' },
+          el('div', { class: 'sec-h' }, el('span', { class: 'n' }, '01 —'), el('h2', { id: 'h-myts' }, `Mi hoja semanal (${sheet.week})`), el('span', { class: 'dim', style: 'font-size:12px' }, 'Valores en minutos positivos')),
+          el('div', { class: 'tbl-wrap', style: 'margin-top:12px' },
+            el('table', { class: 'dtable' },
+              el('thead', {}, el('tr', {},
+                el('th', { scope: 'col' }, 'Proyecto'),
+                el('th', { scope: 'col' }, 'Tarea'),
+                ...['Lun 23', 'Mar 24', 'Mié 25', 'Jue 26', 'Vie 27'].map((d) => el('th', { scope: 'col', class: 'num-col' }, `${d} (min)`)),
+                el('th', { scope: 'col', class: 'num-col' }, 'Total')
+              )),
+              el('tbody', {},
+                ...sheet.rows.map((r) => {
+                  const rowSum = r.mins.reduce((a, b) => a + b, 0);
+                  return el('tr', {},
+                    el('td', { class: 'g-code' }, r.project, r.restricted ? ' ' : '', r.restricted ? icon('lock', 'Restringido') : null),
+                    el('td', {}, r.task),
+                    ...r.mins.map((m, idx) => el('td', { class: 'num-col' },
+                      editable
+                        ? el('input', {
+                            class: 'ts-input', type: 'number', min: 0, max: 720, step: 15, value: m,
+                            'aria-label': `Minutos ${r.project} ${r.task} día ${idx + 1}`,
+                            onchange: (e) => {
+                              const val = Number(e.target.value);
+                              if (!Number.isFinite(val) || val < 0) { validationError = 'Los minutos deben ser mayores o iguales a 0 (sin negativos).'; render(); return; }
+                              validationError = '';
+                              r.mins[idx] = Math.round(val);
+                              buildHeader();
+                              render();
+                            },
+                          })
+                        : el('span', { class: 'num' }, `${m} min`)
+                    )),
+                    el('td', { class: 'num-col' }, el('strong', {}, fmtHours(rowSum)))
+                  );
+                }),
+                el('tr', { class: 'is-group' },
+                  el('td', { colspan: '2' }, 'Total diario'),
+                  ...dayTotals.map((t) => el('td', { class: 'num-col' }, fmtHours(t))),
+                  el('td', { class: 'num-col' }, fmtHours(totalMins()))
+                )
+              )
+            )
+          )
+        ),
+        role.caps.approveTime ? el('section', { 'aria-labelledby': 'h-queue' },
+          el('div', { class: 'sec-h' }, el('span', { class: 'n' }, '02 —'), el('h2', { id: 'h-queue' }, 'Bloque de aprobación del equipo (gestor)'), el('span', { class: 'dim', style: 'font-size:12px' }, 'Al aprobar se congela la tarifa vigente')),
+          el('div', { class: 'tbl-wrap', style: 'margin-top:12px' },
+            el('table', { class: 'dtable' },
+              el('thead', {}, el('tr', {}, ...['Persona', 'Semana', 'Proyectos', 'Total', 'Tarifa a congelar', 'Estado / Motivo', 'Acciones'].map((h) => el('th', { scope: 'col' }, h)))),
+              el('tbody', {}, ...queue.map((q) => el('tr', {},
+                el('td', {}, el('span', { class: 'p-person' }, avatar(DEMO.people, q.person, 'av-xs'), DEMO.people[q.person]?.name)),
+                el('td', { class: 'num' }, q.week),
+                el('td', {}, q.projects),
+                el('td', { class: 'num-col' }, fmtHours(q.totalMins)),
+                el('td', { class: 'num' }, q.rateFrozen),
+                el('td', {},
+                  el('span', { class: `badge ${STATUS_META[q.status].cls}` }, q.status),
+                  q.reopenReason ? el('div', { class: 'form-help', style: 'margin-top:4px' }, q.reopenReason) : null
+                ),
+                el('td', {},
+                  el('div', { style: 'display:flex;gap:6px;flex-wrap:wrap' },
+                    q.status === 'enviada' ? el('button', { type: 'button', class: 'btn btn-primary', style: 'min-height:26px;font-size:12px', onclick: () => { q.status = 'aprobada'; buildHeader(); render(); toast(`Hoja de ${DEMO.people[q.person].name} aprobada · tarifa congelada`); } }, icon('check'), 'Aprobar') : null,
+                    q.status === 'enviada' || q.status === 'aprobada' ? el('button', { type: 'button', class: 'btn', style: 'min-height:26px;font-size:12px', onclick: () => openReopenModal(q, false) }, icon('rotate-cw'), 'Reabrir') : null
+                  )
+                )
+              )))
+            )
+          )
+        ) : el('div', { class: 'banner is-info' }, icon('lock'), el('div', {}, el('strong', {}, 'Cola de aprobación reservada a responsables de proyecto'), el('p', {}, 'El perfil Miembro solo gestiona su propia hoja semanal.')))
+      )
+    );
+  }
+  render();
+}
+</script>
+</body>
+</html>

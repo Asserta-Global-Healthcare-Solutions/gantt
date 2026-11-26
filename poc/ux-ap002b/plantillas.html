@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>11 · Plantillas — Asserta Projects</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../ux-ap002a/shared/base.css">
+<link rel="stylesheet" href="../ux-ap002a/c/c.css">
+<link rel="stylesheet" href="shared/ap002b.css">
+</head>
+<body>
+<nav id="nav"></nav>
+<main class="page-main">
+  <div id="masthead-slot"></div>
+  <div class="toolbar" id="toolbar" role="toolbar" aria-label="Filtros de plantillas"></div>
+  <div class="page-scroll" id="content"></div>
+</main>
+<dialog class="modal" id="dlg-inst" aria-labelledby="inst-title"></dialog>
+<script type="module">
+import { el, icon, avatar, fmtShort } from '../ux-ap002a/shared/util.js';
+import { DEMO, TEMPLATES } from './shared/data-ext.js';
+import { mountShell, makeMasthead, readItem, extendedStateBlock } from './shared/shell.js';
+
+const { bindNavToggle, toast, estado } = mountShell({ navKey: 'plantillas' });
+let selectedId = TEMPLATES[0].id;
+let query = '';
+
+const { header, navBtn } = makeMasthead({
+  kickerParts: [el('span', {}, '07 Plantillas')],
+  title: 'Catálogo de plantillas versionadas',
+  dateline: [
+    el('span', {}, 'Solo estructura WBS, duraciones, dependencias y calendario sugerido'),
+    el('span', {}, 'Nunca copia miembros, horas reales, costes ni secretos'),
+  ],
+  reads: [
+    readItem('Plantillas', String(TEMPLATES.length)),
+    readItem('Versionadas', '100%'),
+  ],
+});
+document.querySelector('#masthead-slot').replaceWith(header);
+bindNavToggle(navBtn);
+
+const toolbar = document.querySelector('#toolbar');
+const content = document.querySelector('#content');
+const dlg = document.querySelector('#dlg-inst');
+
+if (estado) {
+  toolbar.hidden = true;
+  content.replaceChildren(extendedStateBlock(estado));
+} else {
+  const qIn = el('input', { type: 'search', placeholder: 'Buscar plantilla…', 'aria-label': 'Buscar plantilla', oninput: (e) => { query = e.target.value; render(); } });
+  toolbar.replaceChildren(
+    el('label', { class: 'field' }, icon('search'), qIn),
+    el('span', { class: 'sp' }),
+    el('a', { class: 'btn', href: 'proyectos.html' }, 'Ir a listado de proyectos')
+  );
+
+  function openInstantiate(tpl) {
+    const startInput = el('input', { id: 'ins-start', type: 'date', value: '2026-12-07', required: true });
+    const codeInput = el('input', { id: 'ins-code', type: 'text', value: 'PRV3', required: true, maxlength: 8 });
+    const nameInput = el('input', { id: 'ins-name', type: 'text', value: `${tpl.name} · Q1 2027`, required: true });
+    const form = el('form', { id: 'f-inst', class: 'form-grid', onsubmit: (e) => {
+      e.preventDefault();
+      dlg.close();
+      toast(`Proyecto ${codeInput.value.toUpperCase()} instanciado desde ${tpl.id} (${tpl.version}) con inicio ${fmtShort(startInput.value)} · IDs remapeados`);
+    } },
+      el('div', { class: 'form-field' }, el('label', { for: 'ins-code' }, 'Nuevo código de proyecto'), codeInput),
+      el('div', { class: 'form-field' }, el('label', { for: 'ins-start' }, 'Fecha de inicio del nuevo proyecto'), startInput),
+      el('div', { class: 'form-field full' }, el('label', { for: 'ins-name' }, 'Nombre del proyecto'), nameInput),
+      el('div', { class: 'form-field full' },
+        el('div', { class: 'banner is-info' }, icon('shield'), el('div', {},
+          el('strong', {}, 'Garantía de aislamiento al instanciar'),
+          el('p', {}, `Se remapean los ${tpl.tasksCount} IDs de tarea y ${tpl.depsCount} dependencias desde ${tpl.id} ${tpl.version} y se recalcula el plan desde la nueva fecha de inicio. No se copian miembros, horas, tarifas, presupuestos, comentarios ni secretos.`)
+        ))
+      )
+    );
+    dlg.replaceChildren(
+      el('header', {}, el('p', { class: 'eyebrow' }, `Instanciar plantilla · ${tpl.id} ${tpl.version}`), el('h2', { id: 'inst-title' }, tpl.name)),
+      el('div', { class: 'm-body' }, form),
+      el('footer', {},
+        el('button', { type: 'button', class: 'btn', onclick: () => dlg.close() }, 'Cancelar'),
+        el('button', { type: 'submit', form: 'f-inst', class: 'btn btn-primary' }, icon('copy-plus'), 'Instanciar proyecto')
+      )
+    );
+    dlg.showModal();
+  }
+
+  function render() {
+    const items = TEMPLATES.filter((t) => !query || `${t.id} ${t.name} ${t.description}`.toLowerCase().includes(query.toLowerCase()));
+    const sel = items.find((t) => t.id === selectedId) ?? items[0];
+
+    content.replaceChildren(
+      el('div', { class: 'page-stack' },
+        el('div', { class: 'grid-split' },
+          el('section', { style: 'display:grid;gap:12px', 'aria-label': 'Lista de plantillas' },
+            ...(items.length ? items.map((t) => el('article', {
+              class: 'card',
+              style: sel?.id === t.id ? 'border-color:var(--brand);box-shadow:inset 3px 0 0 var(--brand)' : '',
+            },
+              el('div', { class: 'card-h' },
+                el('div', {},
+                  el('span', { class: 'eyebrow-n' }, `${t.id} · ${t.version}`),
+                  el('h2', {}, t.name)
+                ),
+                el('button', { type: 'button', class: 'btn btn-primary', onclick: () => openInstantiate(t) }, icon('copy-plus'), 'Instanciar')
+              ),
+              el('p', { class: 'dim', style: 'font-size:13px' }, t.description),
+              el('div', { style: 'display:flex;flex-wrap:wrap;gap:8px;align-items:center' },
+                el('span', { class: 'badge' }, `${t.tasksCount} nodos WBS`),
+                el('span', { class: 'badge' }, `${t.depsCount} dependencias`),
+                el('span', { class: 'badge' }, `${t.durationDays} d laborables`),
+                el('span', { class: 'badge' }, t.calendar),
+                el('button', { type: 'button', class: 'btn btn-ghost', style: 'margin-left:auto;min-height:26px;font-size:12px', onclick: () => { selectedId = t.id; render(); } }, icon('eye'), 'Previsualizar WBS')
+              )
+            )) : [extendedStateBlock('vacio', { vacioTitle: 'Sin plantillas para esa búsqueda', vacioCta: 'Mostrar todas', vacioHref: 'plantillas.html' })])
+          ),
+          sel ? el('aside', { class: 'card', 'aria-label': 'Previsualización de estructura WBS' },
+            el('div', { class: 'card-h' },
+              el('div', {}, el('span', { class: 'eyebrow-n' }, `Vista previa · ${sel.id} ${sel.version}`), el('h2', {}, 'Estructura WBS y dependencias')),
+              el('span', { class: 'p-person', style: 'font-size:12px' }, avatar(DEMO.people, sel.owner, 'av-xs'), DEMO.people[sel.owner]?.name)
+            ),
+            el('p', { class: 'dim', style: 'font-size:12.5px' }, `Última actualización: ${fmtShort(sel.updated)} · Calendario: ${sel.calendar}`),
+            el('div', { class: 'tbl-wrap' },
+              el('table', { class: 'dtable' },
+                el('thead', {}, el('tr', {}, ...['WBS', 'Elemento', 'Dur.', 'Dependencia'].map((h) => el('th', { scope: 'col' }, h)))),
+                el('tbody', {}, ...sel.wbs.map((w) => el('tr', { class: w.kind === 'group' ? 'is-group' : '' },
+                  el('td', { class: 'g-code' }, w.code),
+                  el('td', {}, w.kind === 'milestone' ? '◇ ' : '', w.name),
+                  el('td', { class: 'num-col' }, w.dur),
+                  el('td', { class: 'num' }, w.dep ?? '—')
+                )))
+              )
+            ),
+            el('div', { class: 'banner is-info' }, icon('shield'), el('div', {}, el('strong', {}, 'Sin arrastre de datos sensibles'), el('p', {}, 'Al instanciar se crean IDs nuevos; miembros, horas imputadas, costes y enlaces Jira/Teams no se duplican.'))),
+            el('button', { type: 'button', class: 'btn btn-primary', onclick: () => openInstantiate(sel) }, icon('copy-plus'), `Instanciar «${sel.id}»`)
+          ) : null
+        )
+      )
+    );
+  }
+  render();
+}
+</script>
+</body>
+</html>

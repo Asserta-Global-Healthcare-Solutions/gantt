@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AP-002b · Mapa completo (17 pantallas y 7 recorridos) — Asserta Projects</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../ux-ap002a/shared/base.css">
+<link rel="stylesheet" href="../ux-ap002a/c/c.css">
+<link rel="stylesheet" href="shared/ap002b.css">
+</head>
+<body>
+<nav id="nav"></nav>
+<main class="page-main">
+  <div id="masthead-slot"></div>
+  <div class="page-scroll" id="content"></div>
+</main>
+<script type="module">
+import { el, icon } from '../ux-ap002a/shared/util.js';
+import { mountShell, makeMasthead, readItem, extendedStateBlock } from './shared/shell.js';
+import { SCREENS, TOURS } from './shared/data-ext.js';
+
+const { bindNavToggle, estado } = mountShell({ navKey: 'mapa' });
+const { header, navBtn } = makeMasthead({
+  kickerParts: [el('span', {}, 'AP-002b · Diseño completo'), el('span', {}, '/'), el('span', {}, 'Sistema C · Asserta')],
+  title: 'Mapa de las 17 pantallas y 7 recorridos',
+  dateline: [
+    el('span', {}, 'Referencia visual oficial: Dirección C · Asserta'),
+    el('span', {}, 'Datos sintéticos consistentes · PPV2 rev. 41'),
+    el('span', {}, 'Claro / Oscuro · 3 roles · 7 estados'),
+  ],
+  reads: [
+    readItem('Pantallas', '17', '', '', 'Todas las pantallas solicitadas para la aplicación, navegables desde el índice lateral 01..12 y pestañas de proyecto a..f.'),
+    readItem('Recorridos', '7', 'flujos', '', 'Recorridos guiados paso a paso de extremo a extremo.'),
+    readItem('Estados UI', '7', '', '', 'Prueba ?estado=cargando|vacio|error|sinpermiso|sesion|conflicto|pendiente en cualquier vista.'),
+  ],
+});
+document.querySelector('#masthead-slot').replaceWith(header);
+bindNavToggle(navBtn);
+
+const content = document.querySelector('#content');
+if (estado) {
+  content.replaceChildren(extendedStateBlock(estado));
+} else {
+  const tourLink = (tid, stepIdx, url) => {
+    const [base, hash] = url.split('#');
+    return `${base}${base.includes('?') ? '&' : '?'}tour=${tid}&step=${stepIdx + 1}${hash ? `#${hash}` : ''}`;
+  };
+
+  const statePills = ['cargando', 'vacio', 'error', 'sinpermiso', 'sesion', 'conflicto', 'pendiente'];
+
+  content.replaceChildren(
+    el('div', { class: 'page-stack' },
+      el('div', { class: 'banner is-info', role: 'note' },
+        icon('info'),
+        el('div', {},
+          el('strong', {}, 'Prototipo navegable sobre el sistema de diseño oficial C · Asserta'),
+          el('p', {}, 'Usa el selector de rol simulado en el pie izquierdo para comprobar la autorización server-side en Costes, Tabla, Detalle, Auditoría y Administración. Alterna claro/oscuro desde el botón de luna.')
+        )
+      ),
+      el('section', { 'aria-labelledby': 'h-tours' },
+        el('div', { class: 'sec-h' }, el('span', { class: 'n' }, '01 —'), el('h2', { id: 'h-tours' }, 'Los 7 recorridos interactivos guiados')),
+        el('div', { class: 'grid-2', style: 'margin-top:14px' },
+          ...TOURS.map((t) => el('article', { class: 'tour-card' },
+            el('div', { class: 'card-h' },
+              el('div', {}, el('span', { class: 'eyebrow-n' }, `Recorrido 0${t.id}`), el('h3', {}, t.title)),
+              el('a', { class: 'btn btn-primary', href: tourLink(t.id, 0, t.steps[0].url) }, 'Iniciar', icon('arrow-right'))
+            ),
+            el('p', { class: 'dim', style: 'font-size:13px' }, t.goal),
+            el('div', { class: 'tour-steps' },
+              ...t.steps.flatMap((s, i) => [
+                el('a', { href: tourLink(t.id, i, s.url) }, `${i + 1}. ${s.label}`),
+                i < t.steps.length - 1 ? el('span', { 'aria-hidden': 'true' }, '→') : null,
+              ])
+            )
+          ))
+        )
+      ),
+      el('section', { 'aria-labelledby': 'h-screens' },
+        el('div', { class: 'sec-h' }, el('span', { class: 'n' }, '02 —'), el('h2', { id: 'h-screens' }, 'Catálogo completo de las 17 pantallas')),
+        el('div', { class: 'grid-auto', style: 'margin-top:14px' },
+          ...SCREENS.map((s) => el('a', { class: 'screen-card', href: s.file },
+            el('div', { class: 'sc-top' },
+              el('span', { class: 'eyebrow-n' }, `${s.id} · ${s.group}`),
+              el('span', { class: 'g-code' }, s.file.split('?')[0])
+            ),
+            el('h3', {}, s.name),
+            el('p', {}, s.desc)
+          ))
+        )
+      ),
+      el('section', { 'aria-labelledby': 'h-states' },
+        el('div', { class: 'sec-h' }, el('span', { class: 'n' }, '03 —'), el('h2', { id: 'h-states' }, 'Verificación rápida de estados y roles')),
+        el('div', { class: 'grid-2', style: 'margin-top:14px' },
+          el('div', { class: 'card' },
+            el('div', { class: 'card-h' }, el('h3', {}, 'Los 7 estados de interfaz (?estado=...)')),
+            el('p', { class: 'dim', style: 'font-size:13px' }, 'Funcionan en cualquiera de las 17 pantallas. Ejemplos rápidos sobre el proyecto PPV2:'),
+            el('div', { style: 'display:flex;flex-wrap:wrap;gap:6px' },
+              ...statePills.map((st) => el('a', { class: 'btn', href: `tabla.html?estado=${st}` }, `?estado=${st}`))
+            )
+          ),
+          el('div', { class: 'card' },
+            el('div', { class: 'card-h' }, el('h3', {}, 'Perfiles RBAC simulados (?rol=...)')),
+            el('p', { class: 'dim', style: 'font-size:13px' }, 'Comprueba cómo el servidor omite cifras económicas o bloquea contenido de proyectos:'),
+            el('div', { style: 'display:flex;flex-wrap:wrap;gap:6px' },
+              el('a', { class: 'btn', href: 'costes.html?rol=pm' }, 'Costes · Jefa de proyecto'),
+              el('a', { class: 'btn', href: 'costes.html?rol=miembro' }, 'Costes · Miembro (sin permiso)'),
+              el('a', { class: 'btn', href: 'costes.html?rol=admin' }, 'Costes · Admin IT (sin permiso)'),
+              el('a', { class: 'btn', href: 'tabla.html?rol=miembro' }, 'Tabla · sin columnas €'),
+              el('a', { class: 'btn', href: 'admin.html?rol=admin' }, 'Admin · perfil IT titular')
+            )
+          )
+        )
+      )
+    )
+  );
+}
+</script>
+</body>
+</html>

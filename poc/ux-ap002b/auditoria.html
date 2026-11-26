@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>16 · Auditoría de seguridad — Asserta Projects</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../ux-ap002a/shared/base.css">
+<link rel="stylesheet" href="../ux-ap002a/c/c.css">
+<link rel="stylesheet" href="shared/ap002b.css">
+</head>
+<body>
+<nav id="nav"></nav>
+<main class="page-main">
+  <div id="masthead-slot"></div>
+  <div class="toolbar" id="toolbar" role="toolbar" aria-label="Filtros de auditoría de seguridad"></div>
+  <div class="page-scroll" id="content"></div>
+</main>
+<script type="module">
+import { el, icon } from '../ux-ap002a/shared/util.js';
+import { PEOPLE_EXT, SECURITY_AUDIT } from './shared/data-ext.js';
+import { mountShell, makeMasthead, readItem, extendedStateBlock } from './shared/shell.js';
+
+const { role, bindNavToggle, toast, estado } = mountShell({ navKey: 'auditoria' });
+const filter = { actor: '', action: '', project: '', result: '', corr: '' };
+
+const { header, navBtn } = makeMasthead({
+  kickerParts: [el('span', {}, '11 Auditoría de seguridad')],
+  title: 'Registro append-only de auditoría',
+  dateline: [
+    el('span', {}, 'Inmutable (append-only) · separado del historial funcional de tareas RF-33'),
+    el('span', {}, 'Timestamps en UTC · diffs sanitizados sin tokens ni cuerpos de comentarios'),
+  ],
+  reads: [
+    readItem('Eventos', String(SECURITY_AUDIT.length)),
+    readItem('DENY', String(SECURITY_AUDIT.filter((e) => e.result === 'DENY').length), '', 'danger'),
+    readItem('ALLOW', String(SECURITY_AUDIT.filter((e) => e.result === 'ALLOW').length)),
+  ],
+});
+document.querySelector('#masthead-slot').replaceWith(header);
+bindNavToggle(navBtn);
+
+const toolbar = document.querySelector('#toolbar');
+const content = document.querySelector('#content');
+
+if (estado) {
+  toolbar.hidden = true;
+  content.replaceChildren(extendedStateBlock(estado));
+} else if (!role.caps.auditView) {
+  toolbar.hidden = true;
+  content.replaceChildren(extendedStateBlock('sinpermiso', {
+    sinpermisoTitle: 'Sin permiso para consultar la auditoría de seguridad (audit.read)',
+    sinpermisoBody: 'El registro de auditoría de seguridad solo es accesible para perfiles autorizados con audit.read.',
+    sinpermisoActions: [{ label: 'Volver a Inicio', primary: true, href: 'inicio.html' }],
+  }));
+} else {
+  const uniq = (k) => [...new Set(SECURITY_AUDIT.map((x) => x[k]))];
+  const selActor = el('select', { 'aria-label': 'Actor', onchange: (e) => { filter.actor = e.target.value; render(); } },
+    el('option', { value: '' }, 'Todos los actores'),
+    ...uniq('actor').map((a) => el('option', { value: a }, PEOPLE_EXT[a]?.name ?? a))
+  );
+  const selAction = el('select', { 'aria-label': 'Acción', onchange: (e) => { filter.action = e.target.value; render(); } },
+    el('option', { value: '' }, 'Todas las acciones'),
+    ...uniq('action').map((a) => el('option', { value: a }, a))
+  );
+  const selProj = el('select', { 'aria-label': 'Proyecto', onchange: (e) => { filter.project = e.target.value; render(); } },
+    el('option', { value: '' }, 'Todos los proyectos'),
+    ...uniq('project').map((p) => el('option', { value: p }, p))
+  );
+  const selRes = el('select', { 'aria-label': 'Resultado', onchange: (e) => { filter.result = e.target.value; render(); } },
+    el('option', { value: '' }, 'ALLOW + DENY'),
+    el('option', { value: 'ALLOW' }, 'ALLOW'),
+    el('option', { value: 'DENY' }, 'DENY')
+  );
+  const inCorr = el('input', { type: 'search', placeholder: 'correlationId…', 'aria-label': 'Filtrar por correlationId', oninput: (e) => { filter.corr = e.target.value; render(); } });
+
+  toolbar.replaceChildren(
+    el('label', { class: 'field' }, icon('users'), selActor),
+    el('label', { class: 'field' }, selAction),
+    el('label', { class: 'field' }, selProj),
+    el('label', { class: 'field' }, selRes),
+    el('label', { class: 'field' }, icon('search'), inCorr),
+    el('span', { class: 'sp' }),
+    el('button', { type: 'button', class: 'btn', onclick: () => toast('Exportación JSONL de auditoría sanitizada generada') }, icon('download'), 'Exportar JSONL')
+  );
+
+  function render() {
+    const rows = SECURITY_AUDIT.filter((e) => {
+      if (filter.actor && e.actor !== filter.actor) return false;
+      if (filter.action && e.action !== filter.action) return false;
+      if (filter.project && e.project !== filter.project) return false;
+      if (filter.result && e.result !== filter.result) return false;
+      if (filter.corr && !e.corr.toLowerCase().includes(filter.corr.toLowerCase())) return false;
+      return true;
+    });
+
+    content.replaceChildren(
+      el('div', { class: 'page-stack' },
+        el('div', { class: 'banner is-info', role: 'note' }, icon('scroll-text'), el('div', {},
+          el('strong', {}, 'Diferencia frente al historial funcional (RF-33)'),
+          el('p', {}, 'Este registro es estrictamente append-only para trazabilidad de seguridad (accesos ALLOW/DENY, revocación de sesiones, break-glass y commits). Nunca almacena tokens OAuth, secretos ni textos libres de comentarios.')
+        )),
+        rows.length === 0
+          ? extendedStateBlock('vacio', { vacioTitle: 'Ningún evento coincide con el filtro', vacioCta: 'Limpiar filtros', vacioHref: 'auditoria.html' })
+          : el('div', { class: 'tbl-wrap' }, el('table', { class: 'dtable' },
+              el('thead', {}, el('tr', {}, ...['Timestamp UTC', 'correlationId', 'Actor (oid)', 'Acción', 'Proyecto', 'Resultado', 'Diff sanitizado'].map((h) => el('th', { scope: 'col' }, h)))),
+              el('tbody', {}, ...rows.map((e) => el('tr', {},
+                el('td', { class: 'num' }, e.ts),
+                el('td', { class: 'g-code' }, e.corr),
+                el('td', {}, el('div', {}, PEOPLE_EXT[e.actor]?.name ?? e.actor), el('div', { class: 'num dim' }, e.oid)),
+                el('td', { class: 'num' }, e.action),
+                el('td', { class: 'g-code' }, e.project),
+                el('td', {}, el('span', { class: `badge ${e.result === 'DENY' ? 'badge-danger' : 'badge-ok'}` }, icon(e.result === 'DENY' ? 'ban' : 'check'), e.result)),
+                el('td', { style: 'font-size:12.5px;color:var(--text-2)' }, e.diff)
+              )))
+            ))
+      )
+    );
+  }
+  render();
+}
+</script>
+</body>
+</html>

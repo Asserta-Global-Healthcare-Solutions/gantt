@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>17 · Integraciones con Teams y Jira — Asserta Projects</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../ux-ap002a/shared/base.css">
+<link rel="stylesheet" href="../ux-ap002a/c/c.css">
+<link rel="stylesheet" href="shared/ap002b.css">
+</head>
+<body>
+<nav id="nav"></nav>
+<main class="page-main">
+  <div id="masthead-slot"></div>
+  <div class="page-scroll" id="content"></div>
+</main>
+<script type="module">
+import { el, icon } from '../ux-ap002a/shared/util.js';
+import { mountShell, makeMasthead, readItem, extendedStateBlock } from './shared/shell.js';
+
+const { role, bindNavToggle, toast, estado } = mountShell({ navKey: 'integraciones' });
+let teamsAuthMode = 'tenant';
+let jiraMode = 'linkOnly';
+let jiraAudienceDeclared = false;
+let jiraSyncedAt = '2026-11-25 08:30:00 UTC';
+
+const { header, navBtn } = makeMasthead({
+  kickerParts: [el('span', {}, '12 Integraciones')],
+  title: 'Integraciones con Teams y Jira',
+  dateline: [
+    el('span', {}, 'Teams Workflows (autenticado por tenant recomendado) · outbox con reintentos y DLQ'),
+    el('span', {}, 'Jira Cloud estrictamente solo lectura en v1 (OAuth 3LO · linkOnly por defecto)'),
+  ],
+  reads: [
+    readItem('Teams cola', '0', 'en DLQ', '', 'Cola outbox idempotente sin fallos bloqueados.'),
+    readItem('Jira modo', 'Solo lectura', '', '', 'Nunca escribe en Jira en v1.'),
+  ],
+});
+document.querySelector('#masthead-slot').replaceWith(header);
+bindNavToggle(navBtn);
+
+const content = document.querySelector('#content');
+
+if (estado) {
+  content.replaceChildren(extendedStateBlock(estado));
+} else if (!role.caps.adminView) {
+  content.replaceChildren(extendedStateBlock('sinpermiso', {
+    sinpermisoTitle: 'Configuración de integraciones restringida',
+    sinpermisoBody: 'La configuración de conectores Teams y Jira requiere permisos de plataforma o propiedad técnica autorizada.',
+    sinpermisoActions: [{ label: 'Volver a Inicio', primary: true, href: 'inicio.html' }],
+  }));
+} else {
+  function render() {
+    const teamsCard = el('section', { class: 'card', id: 'teams', 'aria-labelledby': 'h-teams' },
+      el('div', { class: 'card-h' },
+        el('div', {}, el('span', { class: 'eyebrow-n' }, 'Conector 01 · Notificaciones'), el('h2', { id: 'h-teams' }, 'Microsoft Teams Workflows')),
+        el('span', { class: 'badge badge-ok' }, icon('check-circle-2'), 'Operativo')
+      ),
+      el('div', { class: 'form-grid' },
+        el('div', { class: 'form-field' },
+          el('label', { for: 'tm-auth' }, 'Autenticación del trigger de Workflow'),
+          el('select', { id: 'tm-auth', onchange: (e) => { teamsAuthMode = e.target.value; render(); } },
+            el('option', { value: 'tenant', selected: teamsAuthMode === 'tenant' }, 'Autenticado por tenant Entra ID (Recomendado)'),
+            el('option', { value: 'anyone', selected: teamsAuthMode === 'anyone' }, 'Anyone con URL firmada (Riesgo elevado)')
+          )
+        ),
+        el('div', { class: 'form-field' },
+          el('label', { for: 'tm-chan' }, 'Canal destino (proyecto PPV2)'),
+          el('input', { id: 'tm-chan', type: 'text', value: 'Canal #proj-ppv2-seguimiento (secret almacenado en Key Vault)' })
+        )
+      ),
+      teamsAuthMode === 'anyone'
+        ? el('div', { class: 'banner is-danger', role: 'alert' }, icon('shield-alert'), el('div', {},
+            el('strong', {}, 'Aviso de riesgo: modo «Anyone» desaconsejado'),
+            el('p', {}, 'Un trigger «Anyone» depende únicamente de la confidencialidad de la URL. Usa «Autenticado por tenant Entra ID» siempre que IT lo permita y nunca pegues la URL en logs ni repositorios.')
+          ))
+        : el('div', { class: 'banner is-ok' }, icon('shield'), el('div', {},
+            el('strong', {}, 'Modo seguro activo: autenticado por tenant'),
+            el('p', {}, 'Se envía únicamente payload mínimo (código de proyecto, ID de tarea, tipo de evento y enlace profundo) sin cuerpos de comentarios ni cifras económicas.')
+          )),
+      el('div', { class: 'grid-3' },
+        el('div', { class: 'card', style: 'padding:10px 12px' }, el('span', { class: 'eyebrow-n' }, 'Enviados 24h'), el('strong', { class: 'num', style: 'font-size:20px' }, '18')),
+        el('div', { class: 'card', style: 'padding:10px 12px' }, el('span', { class: 'eyebrow-n' }, 'Reintentos activos'), el('strong', { class: 'num', style: 'font-size:20px' }, '1')),
+        el('div', { class: 'card', style: 'padding:10px 12px' }, el('span', { class: 'eyebrow-n' }, 'Cola DLQ'), el('strong', { class: 'num', style: 'font-size:20px' }, '0'))
+      ),
+      el('pre', { style: 'margin:0;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius);background:var(--bg);font:12px/1.45 var(--font-mono);overflow:auto' },
+        '{\n  "event": "plan.commit",\n  "projectCode": "PPV2",\n  "revision": 41,\n  "affectedTasks": 9,\n  "deepLink": "/proyectos/PPV2/gantt?task=2.1"\n}'
+      ),
+      el('div', { style: 'display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap' },
+        el('button', { type: 'button', class: 'btn', onclick: () => toast('Prueba enviada al canal Teams · HTTP 202 aceptado (payload mínimo)') }, icon('send'), 'Probar canal'),
+        el('button', { type: 'button', class: 'btn btn-primary', onclick: () => toast('Configuración Teams guardada (sin exponer secretos)') }, 'Guardar Teams')
+      )
+    );
+
+    const jiraIssues = [
+      { key: 'PROV-118', task: '2.1 Arquitectura de integración', status: 'In Progress', sync: 'Vinculada' },
+      { key: 'PROV-122', task: '2.2 Diseño de interfaz', status: 'In Progress', sync: 'Vinculada' },
+      { key: 'PROV-150', task: '3.3 Formación al equipo de soporte', status: 'To Do', sync: 'Vinculada' },
+      { key: 'PROV-175', task: 'Nueva candidata a vincular (preview)', status: 'To Do', sync: 'Disponible' },
+    ];
+
+    const jiraCard = el('section', { class: 'card', id: 'jira', 'aria-labelledby': 'h-jira' },
+      el('div', { class: 'card-h' },
+        el('div', {}, el('span', { class: 'eyebrow-n' }, 'Conector 02 · Solo lectura en v1'), el('h2', { id: 'h-jira' }, 'Jira Cloud (OAuth 3LO · read-only)')),
+        el('span', { class: 'badge badge-brand' }, icon('link-2'), `Última sync: ${jiraSyncedAt}`)
+      ),
+      el('div', { class: 'form-grid' },
+        el('div', { class: 'form-field' },
+          el('label', { for: 'jr-site' }, 'Site Jira Cloud conectado (OAuth 3LO)'),
+          el('input', { id: 'jr-site', type: 'text', readonly: true, value: 'asserta-cloud.atlassian.net · Scopes: read:jira-work (solo lectura)' })
+        ),
+        el('div', { class: 'form-field' },
+          el('label', { for: 'jr-proj' }, 'Proyectos Jira autorizados'),
+          el('select', { id: 'jr-proj' }, el('option', {}, 'PROV (Portal Proveedores) · lectura'), el('option', {}, 'ERP (Migración ERP) · lectura'))
+        ),
+        el('div', { class: 'form-field full' },
+          el('label', { for: 'jr-mode' }, 'Modo de sincronización'),
+          el('select', { id: 'jr-mode', onchange: (e) => { jiraMode = e.target.value; render(); } },
+            el('option', { value: 'linkOnly', selected: jiraMode === 'linkOnly' }, 'linkOnly (Por defecto — solo clave y enlace; evita fuga de metadatos entre audiencias)'),
+            el('option', { value: 'metadata', selected: jiraMode === 'metadata' }, 'metadata (Clave + estado y título en caché; exige declarar audiencia compatible)')
+          )
+        )
+      ),
+      jiraMode === 'metadata'
+        ? el('div', { class: 'banner is-warn' }, icon('triangle-alert'), el('div', {},
+            el('strong', {}, 'Declaración obligatoria de audiencia compatible (modo metadata)'),
+            el('p', {}, 'Confirma que todos los miembros de PPV2 tienen permiso de lectura sobre el proyecto Jira PROV antes de almacenar títulos o estados en caché.'),
+            el('label', { class: 'form-check', style: 'margin-top:8px' },
+              el('input', { type: 'checkbox', checked: jiraAudienceDeclared, onchange: (e) => { jiraAudienceDeclared = e.target.checked; render(); } }),
+              'Declaro que la audiencia de PPV2 es compatible con el proyecto Jira PROV (quedará auditado)'
+            )
+          ))
+        : el('div', { class: 'banner is-info' }, icon('shield'), el('div', {},
+            el('strong', {}, 'Modo linkOnly activo por defecto'),
+            el('p', {}, 'Solo se almacena la clave PROV-xxx y su URL; al abrir el enlace, Jira aplica sus propios permisos. Prohibida cualquier escritura hacia Jira en v1.')
+          )),
+      el('div', { class: 'tbl-wrap' }, el('table', { class: 'dtable' },
+        el('thead', {}, el('tr', {}, ...['Clave Jira', 'Tarea vinculada en PPV2', 'Metadato mostrado', 'Estado vínculo'].map((h) => el('th', { scope: 'col' }, h)))),
+        el('tbody', {}, ...jiraIssues.map((j) => el('tr', {},
+          el('td', { class: 'g-code' }, j.key),
+          el('td', {}, j.task),
+          el('td', {}, jiraMode === 'metadata' && jiraAudienceDeclared ? el('span', { class: 'badge' }, j.status) : el('span', { class: 'dim' }, 'Omitido (linkOnly)')),
+          el('td', {}, el('span', { class: `badge ${j.sync === 'Vinculada' ? 'badge-ok' : 'badge-brand'}` }, j.sync))
+        )))
+      )),
+      el('div', { style: 'display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap' },
+        el('button', { type: 'button', class: 'btn', onclick: () => { jiraSyncedAt = '2026-11-25 11:45:00 UTC'; render(); toast('Sincronización Jira solo lectura completada (0 escrituras)'); } }, icon('refresh-cw'), 'Sincronizar ahora (solo lectura)'),
+        el('button', { type: 'button', class: 'btn btn-primary', disabled: jiraMode === 'metadata' && !jiraAudienceDeclared, onclick: () => toast(`Configuración Jira guardada en modo ${jiraMode}`) }, 'Guardar Jira')
+      )
+    );
+
+    content.replaceChildren(el('div', { class: 'page-stack' }, teamsCard, jiraCard));
+  }
+  render();
+}
+</script>
+</body>
+</html>
