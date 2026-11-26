@@ -16,9 +16,8 @@ Estos documentos son nuevos y **no sustituyen** el kit original (`README.md`, `A
 | AP-004 | [AP-004-contrato-motor.md](AP-004-contrato-motor.md) | Contrato normativo del motor v1.1 (aprobado) |
 | AP-004 | [fixtures/engine/](fixtures/engine/) | 90 casos dorados con esquema; verificados por `poc/engine-oracle/` |
 | AP-002a | [AP-002a-direccion-visual.md](AP-002a-direccion-visual.md) · [sistema de diseño C](AP-002a-sistema-diseno-c.md) · [galería](AP-002a-galeria.html) | **Cerrado (2026-11-26):** C · Asserta referencia visual oficial; tokens, componentes y reglas fijados; A y B conservados solo como evidencia histórica en `poc/ux-ap002a/` |
-| AP-002b | [AP-002b-diseno-completo.md](AP-002b-diseno-completo.md) · [galería](AP-002b-galeria.html) | **Entregado / en revisión (2026-11-26):** 17 pantallas navegables y 7 recorridos sobre C · Asserta en `poc/ux-ap002b/`; 51 cargas `axe-core` (0 errores) y 57 capturas JPEG |
-| AP-003 | [AP-003-poc-gantt.md](AP-003-poc-gantt.md) | **Entregado / pendiente selección (2026-11-26):** PoC sobre Next.js 16.4.6 + React 19.3.1 (build de producción), 1.000 tareas / 2.000 vínculos, Frappe, SVAR, DHTMLX Community y render propio en `poc/gantt-poc/` |
-| AP-005 | [AP-005-00-resumen.md](AP-005-00-resumen.md) (+ 01–05) | **Corregido técnicamente (2026-11-26):** sesiones sin CAE + Graph, Teams tenant, ENS Anexo II RD 311/2022, ASVS 5.0.0 V1..V17, RPO ≤4 h / RTO ≤8 h, `DA-18`/`ST-23` RF-34; aprobaciones IT/Seguridad/DPD/Finanzas/Dirección pendientes |
+| AP-005 | [AP-005-00-resumen.md](AP-005-00-resumen.md) (+ 01–05) | Threat model, activos, STRIDE, permisos, Entra, sesiones, integraciones, matriz ENS preliminar, continuidad, riesgos y pruebas; en revisión |
+| AP-002a | [AP-002a-direccion-visual.md](AP-002a-direccion-visual.md) · [galería](AP-002a-galeria.html) | Direcciones A, B y C · Asserta (provisional), prototipos en `poc/ux-ap002a/`, en revisión |
 
 ## Convenciones
 - **H-xx**: hallazgo de auditoría (C = crítico, A = alto, M = medio, B = bajo). **D-xx**: decisión adoptada. **P-xx**: decisión pendiente. **E-xx**: errata. **CH-xx**: cambio v1.1.

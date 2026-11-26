@@ -63,4 +63,12 @@ Ninguna de estas decisiones está aprobada. Los «responsables propuestos» son 
 | P-36 | Continuidad: **RPO ≤ 4 h**, **RTO ≤ 8 h**, PITR de PostgreSQL cuando sea viable y pruebas trimestrales con evidencias (AP-005 04) | Decidir con hosting (IT + Seguridad) | AP-058, AP-053 (no bloquea F0/F1) |
 | P-37 | Política ante indisponibilidad de Microsoft Graph en revalidación: fail-open acotado con ventana de gracia + alerta vs fail-closed estricto (AP-005 02 §4) | Opción A (fail-open acotado + alerta, manteniendo baja local inmediata) (Seguridad + IT) | AP-009 (no bloquea F0) |
 | P-38 | Selección del renderizador Gantt a partir de [AP-003](AP-003-poc-gantt.md) para `ADR-002` | Opción primaria recomendada: **Render propio virtualizado** (9,10/10); respaldo: DHTMLX Community 10.1.0 MIT (7,03/10) | **AP-006 (`ADR-002`) y Gate F0** |
+| ~~P-29~~ | **Resuelta 2026-11-26:** aprobada **RF-34** (preferencias de interfaz por usuario en servidor con sincronización entre dispositivos: `user_preference`, `GET/PUT /api/v1/me/preferences`, subtarea `AP-015b`, [CH-16](AP-001-03-propuesta-v1.1.md#ch-16)) | — | — |
+| P-30 | Verificación del prototipo y del producto en Safari y Firefox (versiones aprobadas por IT) | Antes del gate F0 sobre el prototipo C; en AP-052 sobre el producto | Gate F0 (visual), AP-052 |
+| P-31 | Prueba con lector de pantalla real (NVDA y VoiceOver) del Gantt y del Inicio de C | Antes de cerrar AP-002b; en AP-052 sobre el producto | AP-002b, AP-052 |
+| P-32 | Inactividad de sesión de 30 min y máximo de 8 h; revalidación de identidad cada 15 min (AP-005 02 §4–5) | Aprobar | Seguridad + IT | AP-009 |
+| P-33 | Encadenado de hashes de auditoría por lote diario y exportación a un repositorio protegido (AP-005 02 §7) | Aprobar como objetivo v1 | Seguridad | AP-012 |
+| P-34 | Conservación: plan y auditoría 5 años, logs 90 días + 1 año, anonimización de usuarios dados de baja a los 2 años (AP-005 01 §4) | Validar con la normativa interna | DPD + Seguridad | AP-012, AP-053 |
+| P-35 | RPO de 4 h en la v1 con PITR, si la infraestructura lo permite (AP-005 04) | Decidir con el hosting | IT + Seguridad | AP-053, AP-058 |
+| P-36 | Modo de autenticación del disparador de Teams Workflows (tenant frente a «Anyone») e identidad de servicio (AP-005 02 §6) | Modo de tenant, si es viable | IT | AP-047 |
 | ~~P-26~~ | **Resuelta 2026-11-25:** commits locales autorizados en las ramas de ticket; push y merge siguen sin autorizar | — | — |
