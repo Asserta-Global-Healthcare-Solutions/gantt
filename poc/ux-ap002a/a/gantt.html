@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portal de proveedores v2 · Gantt — Dirección A</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../shared/base.css">
+<link rel="stylesheet" href="a.css">
+</head>
+<body>
+<nav class="rail" aria-label="Navegación principal">
+  <a class="mark" href="../index.html" title="Asserta Projects (identidad provisional)">A</a>
+  <a href="inicio.html" title="Inicio" aria-label="Inicio"><span class="i i-house" aria-hidden="true"></span></a>
+  <a href="gantt.html" title="Proyectos" aria-label="Proyectos" aria-current="page"><span class="i i-folder-kanban" aria-hidden="true"></span></a>
+  <a href="#" title="Cartera (AP-002b)" aria-label="Cartera (pendiente de AP-002b)" aria-disabled="true"><span class="i i-layers" aria-hidden="true"></span></a>
+  <a href="#" title="Recursos (AP-002b)" aria-label="Recursos (pendiente de AP-002b)" aria-disabled="true"><span class="i i-users" aria-hidden="true"></span></a>
+  <a href="#" title="Horas (AP-002b)" aria-label="Horas (pendiente de AP-002b)" aria-disabled="true"><span class="i i-clock" aria-hidden="true"></span></a>
+  <span class="sp"></span>
+  <a href="#" title="Notificaciones" aria-label="Notificaciones, 2 sin leer"><span class="i i-bell" aria-hidden="true"></span><span class="badge"></span></a>
+  <button type="button" data-theme-toggle aria-label="Modo oscuro"><span class="i i-moon" aria-hidden="true"></span></button>
+  <span class="av av-sm" title="Lucía Ferrer" role="img" aria-label="Lucía Ferrer">LF</span>
+</nav>
+<main>
+  <header class="top">
+    <nav class="crumbs" aria-label="Ruta"><a href="#">Proyectos</a><span class="i i-chevron-right" aria-hidden="true"></span><b>Portal de proveedores v2</b></nav>
+    <span class="sp"></span>
+    <button class="btn cmdk" type="button"><span><span class="i i-search" aria-hidden="true"></span>Buscar o ejecutar…</span><span class="kbd">Ctrl K</span></button>
+    <span class="proto-flag">PROTOTIPO · DATOS FICTICIOS</span>
+  </header>
+  <section class="phead">
+    <h1>Portal de proveedores v2 <span class="num">PPV2</span></h1>
+    <dl class="reads" id="reads" aria-label="Lecturas del plan"></dl>
+    <nav class="tabs" aria-label="Vistas del proyecto">
+      <a href="#" aria-current="page"><span class="i i-chart-gantt" aria-hidden="true"></span>Gantt</a>
+      <a href="#"><span class="i i-table-2" aria-hidden="true"></span>Tabla</a>
+      <a href="#"><span class="i i-square-kanban" aria-hidden="true"></span>Kanban</a>
+      <a href="#"><span class="i i-settings" aria-hidden="true"></span>Ajustes</a>
+    </nav>
+  </section>
+  <div class="toolbar" role="toolbar" aria-label="Controles del Gantt">
+    <div class="seg" role="group" aria-label="Escala">
+      <button type="button" data-zoom="dia" aria-pressed="true">Día</button><button type="button" data-zoom="semana" aria-pressed="false">Semana</button><button type="button" data-zoom="mes" aria-pressed="false">Mes</button>
+    </div>
+    <button class="btn" type="button" data-today><span class="i i-crosshair" aria-hidden="true"></span>Hoy</button>
+    <button class="btn" type="button" data-toggle="critical" aria-pressed="true">Ruta crítica</button>
+    <button class="btn" type="button" data-toggle="baseline" aria-pressed="true">Línea base</button>
+    <label class="field"><span class="i i-filter" aria-hidden="true"></span><span class="sr-only">Persona</span><select id="f-resp"><option value="">Todas las personas</option></select></label>
+    <div class="chips" role="group" aria-label="Estado">
+      <button class="chip" type="button" data-status="pendiente" aria-pressed="false">Pendiente</button>
+      <button class="chip" type="button" data-status="en_curso" aria-pressed="false">En curso</button>
+      <button class="chip" type="button" data-status="completada" aria-pressed="false">Completada</button>
+    </div>
+    <label class="field"><span class="i i-search" aria-hidden="true"></span><span class="sr-only">Buscar tarea</span><input id="f-q" type="search" placeholder="Filtrar tareas" size="14"></label>
+    <span class="fnote" id="fnote" aria-live="polite"></span>
+    <span class="sp"></span>
+    <button class="btn btn-ghost" type="button" id="keys-btn" aria-expanded="false" aria-controls="keys" title="Atajos de teclado"><span class="i i-keyboard" aria-hidden="true"></span><span class="sr-only">Atajos</span></button>
+  </div>
+  <div class="stage" id="stage">
+    <div id="gantt"></div>
+    <aside class="panel drawer" id="panel" hidden aria-label="Detalle de la tarea">
+      <div class="p-head">
+        <h2 class="p-title" data-p-title></h2>
+        <div class="p-tabs" role="tablist"><button type="button" role="tab" data-tab="detalle">Detalle</button><button type="button" role="tab" data-tab="historial">Historial</button></div>
+      </div>
+      <button class="btn btn-ghost p-close" type="button" id="p-close" aria-label="Cerrar detalle"><span class="i i-x" aria-hidden="true"></span></button>
+      <div class="p-body" data-p-body></div>
+    </aside>
+    <dl class="keys" id="keys" hidden>
+      <dt><span class="kbd">↑ ↓</span></dt><dd>Moverse por tareas</dd>
+      <dt><span class="kbd">← →</span></dt><dd>Contraer / expandir grupo</dd>
+      <dt><span class="kbd">Alt ← →</span></dt><dd>Desplazar un día laborable (con vista previa)</dd>
+      <dt><span class="kbd">Enter</span></dt><dd>Abrir detalle</dd>
+      <dt><span class="kbd">1 2 3</span></dt><dd>Escala día / semana / mes</dd>
+      <dt><span class="kbd">C</span> <span class="kbd">B</span> <span class="kbd">T</span></dt><dd>Ruta crítica · línea base · hoy</dd>
+      <dt><span class="kbd">Esc</span></dt><dd>Cerrar panel</dd>
+    </dl>
+  </div>
+</main>
+<div class="toast" id="toast" role="status" hidden></div>
+<script type="module">
+import { DEMO } from '../shared/demo.js';
+import { mountGantt } from '../shared/gantt.js';
+import { initTheme, stateFromQuery, stateBlock, fmtShort, signed, el } from '../shared/util.js';
+
+initTheme('ap002a-a-theme', 'dark');
+const $ = (s) => document.querySelector(s);
+const stage = $('#stage'), panel = $('#panel'), toast = $('#toast');
+const estado = stateFromQuery();
+if (estado) { stage.replaceChildren(stateBlock(estado)); }
+else {
+  let tt;
+  const say = (msg) => { toast.textContent = msg; toast.hidden = false; clearTimeout(tt); tt = setTimeout(() => (toast.hidden = true), 2600); };
+  const reads = $('#reads');
+  const g = mountGantt($('#gantt'), DEMO, {
+    id: 'a', rowH: 28, labelInside: false, px: { dia: 30, semana: 13, mes: 4 }, panel,
+    columns: [{ key: 'code', label: 'WBS' }, { key: 'name', label: 'Tarea' }, { key: 'resp', label: 'Resp' }, { key: 'start', label: 'Inicio' }, { key: 'finish', label: 'Fin' }, { key: 'float', label: 'Holgura' }],
+    barLabel: (m, t) => (m.kind === 'group' ? m.name : `${m.name}${m.responsible ? ` · ${m.responsible}` : ''}`),
+    msLabel: (name, d) => `${name} · ${d}`,
+    todayLabel: (d) => `HOY ${d.toUpperCase()}`,
+    onSelect: () => { panel.hidden = false; },
+    openPanel: () => { panel.hidden = false; },
+    toast: say,
+    onRender: ({ plan, revision, filtering, preview }) => {
+      const slip = plan.tasks['5.1'].startIdx - DEMO.baseline.tasks['5.1'].startIdx;
+      const crit = Object.entries(plan.tasks).filter(([k, v]) => v.critical && DEMO.meta[k].kind !== 'group').length;
+      const R = [['Fin previsto', fmtShort(plan.tasks['5.1'].start), ''], ['Δ línea base', signed(slip), 'd', slip > 0], ['Conflictos', String(plan.conflicts.length), '', plan.conflicts.length > 0], ['Ruta crítica', String(crit), 'tareas'], ['Revisión', String(revision), preview ? 'vista previa' : '']];
+      reads.replaceChildren(...R.map(([k, v, u, alert]) => el('div', { class: `read${alert ? ' alert' : ''}` }, el('dt', {}, k), el('dd', {}, v, u ? el('small', {}, u) : null))));
+      $('#fnote').textContent = filtering ? 'FILTRO ACTIVO · EL PLAN NO CAMBIA' : '';
+    },
+  });
+  const sel = $('#f-resp');
+  for (const [k, p] of Object.entries(DEMO.people)) sel.append(el('option', { value: k }, p.name));
+  sel.addEventListener('change', () => g.filter({ resp: sel.value }));
+  $('#f-q').addEventListener('input', (e) => g.filter({ q: e.target.value }));
+  for (const b of document.querySelectorAll('[data-status]')) b.addEventListener('click', () => b.setAttribute('aria-pressed', String(g.toggleStatus(b.dataset.status))));
+  const setZoom = (z) => { g.zoom(z); for (const b of document.querySelectorAll('[data-zoom]')) b.setAttribute('aria-pressed', String(b.dataset.zoom === z)); };
+  for (const b of document.querySelectorAll('[data-zoom]')) b.addEventListener('click', () => setZoom(b.dataset.zoom));
+  const tog = (k) => { const v = g.toggle(k); document.querySelector(`[data-toggle="${k}"]`).setAttribute('aria-pressed', String(v)); };
+  for (const b of document.querySelectorAll('[data-toggle]')) b.addEventListener('click', () => tog(b.dataset.toggle));
+  $('[data-today]').addEventListener('click', () => g.today());
+  const pre = new URLSearchParams(location.search).get('task');
+  if (pre && DEMO.meta[pre]) g.select(pre, true);
+  $('#p-close').addEventListener('click', () => { panel.hidden = true; });
+  const keys = $('#keys'), kb = $('#keys-btn');
+  kb.addEventListener('click', () => { keys.hidden = !keys.hidden; kb.setAttribute('aria-expanded', String(!keys.hidden)); });
+  document.addEventListener('keydown', (e) => {
+    if (e.target.closest('input, select, textarea, dialog') || e.ctrlKey || e.metaKey || e.altKey) return;
+    const map = { 1: () => setZoom('dia'), 2: () => setZoom('semana'), 3: () => setZoom('mes'), c: () => tog('critical'), b: () => tog('baseline'), t: () => g.today(), '?': () => kb.click(), Escape: () => { panel.hidden = true; keys.hidden = true; } };
+    map[e.key]?.();
+  });
+}
+</script>
+</body>
+</html>

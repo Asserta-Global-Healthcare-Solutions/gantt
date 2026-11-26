@@ -1,0 +1,23 @@
+{
+  "name": "asserta-ux-ap002a-poc",
+  "private": true,
+  "version": "0.0.0",
+  "description": "PROTOTIPO DESECHABLE de AP-002a (dirección visual). No es código de producto.",
+  "type": "module",
+  "scripts": {
+    "serve": "python -m http.server 4173 --bind 127.0.0.1 --directory ..",
+    "data": "node tools/build-data.mjs",
+    "check": "node tools/check.mjs"
+  },
+  "dependencies": {
+    "@fontsource-variable/geist": "5.3.0",
+    "@fontsource-variable/geist-mono": "5.3.0",
+    "@fontsource-variable/inter-tight": "5.3.0",
+    "@fontsource-variable/jetbrains-mono": "5.3.0",
+    "lucide-static": "1.71.0"
+  },
+  "devDependencies": {
+    "axe-core": "4.14.0",
+    "playwright-core": "1.65.0"
+  }
+}
