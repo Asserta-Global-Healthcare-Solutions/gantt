@@ -16,6 +16,8 @@ Estos documentos son nuevos y **no sustituyen** el kit original (`README.md`, `A
 | AP-004 | [AP-004-contrato-motor.md](AP-004-contrato-motor.md) | Contrato normativo del motor v1.1 (aprobado) |
 | AP-004 | [fixtures/engine/](fixtures/engine/) | 90 casos dorados con esquema; verificados por `poc/engine-oracle/` |
 | AP-002a | [AP-002a-direccion-visual.md](AP-002a-direccion-visual.md) · [sistema de diseño C](AP-002a-sistema-diseno-c.md) · [galería](AP-002a-galeria.html) | **Cerrado (2026-11-26):** C · Asserta referencia visual oficial; tokens, componentes y reglas fijados; A y B conservados solo como evidencia histórica en `poc/ux-ap002a/` |
+| AP-005 | [AP-005-00-resumen.md](AP-005-00-resumen.md) (+ 01–05) | Threat model, activos, STRIDE, permisos, Entra, sesiones, integraciones, matriz ENS preliminar, continuidad, riesgos y pruebas; en revisión |
+| AP-002a | [AP-002a-direccion-visual.md](AP-002a-direccion-visual.md) · [galería](AP-002a-galeria.html) | Direcciones A, B y C · Asserta (provisional), prototipos en `poc/ux-ap002a/`, en revisión |
 
 ## Convenciones
 - **H-xx**: hallazgo de auditoría (C = crítico, A = alto, M = medio, B = bajo). **D-xx**: decisión adoptada. **P-xx**: decisión pendiente. **E-xx**: errata. **CH-xx**: cambio v1.1.
