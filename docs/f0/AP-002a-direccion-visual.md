@@ -2,10 +2,11 @@
 
 | Campo | Valor |
 |---|---|
-| Estado | **En revisión.** Dirección provisional C · Asserta (B + rasgos de A); **pendiente de aprobación visual humana** antes de cerrar AP-002a |
-| Prototipo | `poc/ux-ap002a/` (desechable; datos ficticios): `a/`, `b/`, `c/` |
-| Galería | [AP-002a-galeria.html](AP-002a-galeria.html): se abre con doble clic y compara A, B y C por vista, tema y ancho |
-| Después | AP-002b espera a la aprobación de C |
+| Estado | **Cerrado y aprobado definitivamente (2026-11-26).** Dirección **C · Asserta** establecida como **referencia visual oficial del producto** |
+| Sistema de diseño | [AP-002a-sistema-diseno-c.md](AP-002a-sistema-diseno-c.md) (design tokens, componentes, patrones de interacción y reglas de diseño) |
+| Prototipo | `poc/ux-ap002a/c/` (referencia oficial; datos ficticios). `a/` y `b/` se conservan **únicamente como evidencia histórica** |
+| Galería | [AP-002a-galeria.html](AP-002a-galeria.html): archivo histórico comparativo A, B y C |
+| Gobierno | No realizar nuevos rediseños sin autorización humana explícita. AP-002b y AP-003 continúan sobre C · Asserta |
 
 ## 1. Cómo verlo
 ```sh
@@ -26,6 +27,7 @@ npm run check                          # capturas + axe + regresiones (Chrome lo
 ## 2. Historia de la decisión
 1. **Primera ronda:** A · Instrumento y B · Cuaderno (la comparativa original está en el historial de git, commit `6ddb8b5`).
 2. **Revisión del responsable técnico (2026-11-26):** combinación provisional «C · Asserta»: B como base estética y, de A, el modo compacto, las lecturas, los indicadores de holgura, la navegación plegable y el panel flotante cuando falta espacio. Claro por defecto y oscuro con la misma calidad.
+3. **Aprobación definitiva y cierre (2026-11-26):** el solicitante/responsable aprueba definitivamente **C · Asserta** como referencia visual oficial del producto, confirma **P-29 (RF-34)** para preferencias de usuario persistentes en servidor, archiva **A y B como evidencia histórica** y autoriza el paso a AP-002b (exclusivamente sobre C) y la planificación prioritaria de AP-003. Los tokens, componentes, patrones y reglas quedan fijados en [AP-002a-sistema-diseno-c.md](AP-002a-sistema-diseno-c.md).
 
 ## 3. C · Asserta: decisiones de diseño propuestas
 
@@ -39,7 +41,7 @@ npm run check                          # capturas + axe + regresiones (Chrome lo
 | DD-C06 | Panel de detalle acoplado, flotante o cerrado | Si acoplado dejaría **< 480 px de cronograma** (medido con ResizeObserver sobre el espacio real, no por breakpoint), se muestra flotante y lo explica. En flotante solo aparece con una tarea seleccionada. Ancho redimensionable (ratón y teclado) | No |
 | DD-C07 | Tabla de tareas redimensionable | Separador accesible en la cabecera (arrastre o ← →), entre 140 y 420 px para la columna Tarea | No |
 | DD-C08 | Planificación a pantalla completa | Oculta navegación, titular y fechas; mantiene lecturas y herramientas; usa la Fullscreen API si el navegador lo permite (atajo F) | No |
-| DD-C09 | **Preferencias persistentes por usuario**: densidad, tema, zoom, distribución (navegación, panel, ancho de la tabla) | En el prototipo, `localStorage` (por navegador) | **Posible ampliación** (§4, P-29) |
+| DD-C09 | **Preferencias persistentes por usuario**: densidad, tema, zoom, distribución (navegación, panel, ancho de la tabla) | En el prototipo, `localStorage` (por navegador); en producto, servidor (`user_preference`) | **Aprobada (2026-11-26):** RF-34 (§4, P-29) |
 | DD-C10 | Separación cromática: identidad ≠ estado ≠ error/conflicto ≠ advertencia ≠ ruta crítica | Tokens: identidad provisional verde petróleo `--brand`; crítica bermellón; conflicto y error carmín `--signal`; advertencia ocre `--warn`; estados con su propia marca en la tabla (`--st-*`). Nunca solo color: icono, trazo discontinuo, texto | No |
 | DD-C11 | Tooltips en los indicadores técnicos | `shared/tooltip.js`: `role="tooltip"`, `aria-describedby`, ratón **y** teclado, Esc | No (RNF-07) |
 | DD-C12 | Foco visible y teclado completo | Foco con el color de identidad; atajos 1/2/3, C, B, T, D, P, F, [, ?, Alt+←/→, Esc; leyenda y atajos en una ventana de ayuda | No (RNF-07) |
@@ -49,7 +51,7 @@ npm run check                          # capturas + axe + regresiones (Chrome lo
 ## 4. Elementos que podrían ampliar el alcance aprobado
 | Elemento | Por qué | Opciones | Decisión |
 |---|---|---|---|
-| DD-C09 Preferencias **por usuario** (entre dispositivos) | Exige guardar preferencias en el servidor: tabla `user_preference`, endpoint `GET/PUT /me/preferences`, validación y migración. No hay RF ni ticket para ello | (a) Solo en el navegador (`localStorage`): sin cambio de alcance, pero no viaja entre dispositivos. (b) En servidor: nuevo RF-34 (P1) y una subtarea en AP-015, impacto pequeño | **P-29** (recomendación: b) |
+| DD-C09 Preferencias **por usuario** (entre dispositivos) | Exige guardar preferencias en el servidor: tabla `user_preference`, endpoint `GET/PUT /me/preferences`, validación y migración. No hay RF ni ticket para ello | (a) Solo en el navegador (`localStorage`): sin cambio de alcance, pero no viaja entre dispositivos. (b) En servidor: nuevo RF-34 (P1) y una subtarea en AP-015, impacto pequeño | **P-29 aprobada (2026-11-26):** opción (b) — **RF-34** incorporada a v1.1 ([CH-16](AP-001-03-propuesta-v1.1.md#ch-16)) |
 | Fullscreen API | La API del navegador no es una ampliación funcional; el modo de la aplicación funciona sin ella | — | Sin cambio |
 | Leyenda de colores | Componente de ayuda | — | Sin cambio |
 
@@ -103,10 +105,9 @@ Ver el §8 para la ejecución final. Lo que **no** se ha comprobado se registra 
 
 En ejecuciones anteriores a esta, las pruebas detectaron fallos reales, ya corregidos (§7, U-09 a U-15).
 
-## 9. Decisión pedida
-- [ ] Aprobar C · Asserta tal como está
-- [ ] Aprobar C con cambios (indicar cuáles)
-- [ ] Decidir P-29 (preferencias en el servidor o en el navegador)
+## 9. Decisión registrada (2026-11-26)
+- [x] **Aprobada definitivamente C · Asserta** como referencia visual oficial del producto (A y B conservados solo como evidencia histórica; sin nuevos rediseños sin autorización).
+- [x] **Aprobada P-29 (RF-34):** preferencias de interfaz por usuario persistidas en servidor con sincronización entre dispositivos (`user_preference`, `GET/PUT /me/preferences`, subtarea `AP-015b`).
 
 ## 10. Dependencias del prototipo
 Sin cambios respecto a la primera ronda: 7 paquetes con versión exacta (OFL-1.1, ISC, Apache-2.0, MPL-2.0), instalados con `--ignore-scripts`, sin dependencias transitivas y sin CDN.

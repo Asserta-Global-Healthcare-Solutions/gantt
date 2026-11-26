@@ -1,6 +1,6 @@
 # F0 — Entregables de definición y PoC
 
-Estado: **AP-001 aprobado técnicamente** por el responsable técnico (2026-11-25); validación funcional pendiente (P-01, P-02). **AP-004 cerrado** (2026-11-25). **AP-002a en revisión** (C · Asserta pendiente de aprobación visual). **AP-005 en revisión** (rama `feat/AP-005-threat-model`). Ramas: `feat/AP-001-descubrimiento`, `feat/AP-004-contrato-motor` (commits locales autorizados, sin push).
+Estado: **AP-001 aprobado técnicamente** (2026-11-25; validación funcional P-01/P-02 pendiente). **AP-004 cerrado** (2026-11-25). **AP-002a cerrado** (2026-11-26; dirección **C · Asserta** oficial, P-29/RF-34 aprobada). **AP-005 en revisión** (rama `feat/AP-005-threat-model`). **AP-003** siguiente prioridad técnica (Plan Mode); **AP-002b** autorizado en paralelo sobre C. Ramas locales con commits autorizados (P-26), sin push ni merge.
 
 Estos documentos son nuevos y **no sustituyen** el kit original (`README.md`, `AGENTS.md`, `docs/01..08`, `docs/adr/0000`). Las correcciones se proponen aquí y solo se aplicarán al kit tras su aprobación.
 
@@ -15,8 +15,8 @@ Estos documentos son nuevos y **no sustituyen** el kit original (`README.md`, `A
 | 7 | [AP-001-07-plan-ap002a-ap004-ap005.md](AP-001-07-plan-ap002a-ap004-ap005.md) | Plan de ejecución de los siguientes tickets |
 | AP-004 | [AP-004-contrato-motor.md](AP-004-contrato-motor.md) | Contrato normativo del motor v1.1 (aprobado) |
 | AP-004 | [fixtures/engine/](fixtures/engine/) | 90 casos dorados con esquema; verificados por `poc/engine-oracle/` |
-| AP-005 | [AP-005-00-resumen.md](AP-005-00-resumen.md) (+ 01–05) | Threat model, activos, STRIDE, permisos, Entra, sesiones, integraciones, matriz ENS preliminar, continuidad, riesgos y pruebas; en revisión |
-| AP-002a | [AP-002a-direccion-visual.md](AP-002a-direccion-visual.md) · [galería](AP-002a-galeria.html) | Direcciones A, B y C · Asserta (provisional), prototipos en `poc/ux-ap002a/`, en revisión |
+| AP-002a | [AP-002a-direccion-visual.md](AP-002a-direccion-visual.md) · [sistema de diseño C](AP-002a-sistema-diseno-c.md) · [galería](AP-002a-galeria.html) | **Cerrado (2026-11-26):** C · Asserta referencia visual oficial; tokens, componentes y reglas fijados; A y B conservados solo como evidencia histórica en `poc/ux-ap002a/` |
+| AP-005 | [AP-005-00-resumen.md](AP-005-00-resumen.md) (+ 01–05) | Threat model, activos, STRIDE, permisos, Entra, sesiones, integraciones, matriz ENS preliminar, continuidad, riesgos y pruebas; correcciones técnicas en curso |
 
 ## Convenciones
 - **H-xx**: hallazgo de auditoría (C = crítico, A = alto, M = medio, B = bajo). **D-xx**: decisión adoptada. **P-xx**: decisión pendiente. **E-xx**: errata. **CH-xx**: cambio v1.1.
