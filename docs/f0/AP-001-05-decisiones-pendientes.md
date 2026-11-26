@@ -53,4 +53,12 @@ Ninguna de estas decisiones está aprobada. Los «responsables propuestos» son 
 | P-19 | Render PDF/PNG local (navegador headless aislado) | Evaluar en ADR-009 | AP-045 |
 | ~~P-24~~ | **Resuelta 2026-11-25:** aceptada (`remainingDurationDays` + `remainingAsOf`) | — | — |
 | P-25 | Recursos gráficos corporativos de Asserta (logo, color, tipografía). **Los entrega Comunicación/Marketing**, no ingeniería | Identidad provisional en tokens hasta recibirlos | AP-002b (final) |
+| P-29 | Preferencias de interfaz **por usuario en el servidor** (DD-C09): nuevo RF-34 y subtarea en AP-015, o solo en el navegador | En el servidor (impacto pequeño) | AP-015 |
+| P-30 | Verificación del prototipo y del producto en Safari y Firefox (versiones aprobadas por IT) | Antes del gate F0 sobre el prototipo C; en AP-052 sobre el producto | Gate F0 (visual), AP-052 |
+| P-31 | Prueba con lector de pantalla real (NVDA y VoiceOver) del Gantt y del Inicio de C | Antes de cerrar AP-002b; en AP-052 sobre el producto | AP-002b, AP-052 |
+| P-32 | Inactividad de sesión de 30 min y máximo de 8 h; revalidación de identidad cada 15 min (AP-005 02 §4–5) | Aprobar | Seguridad + IT | AP-009 |
+| P-33 | Encadenado de hashes de auditoría por lote diario y exportación a un repositorio protegido (AP-005 02 §7) | Aprobar como objetivo v1 | Seguridad | AP-012 |
+| P-34 | Conservación: plan y auditoría 5 años, logs 90 días + 1 año, anonimización de usuarios dados de baja a los 2 años (AP-005 01 §4) | Validar con la normativa interna | DPD + Seguridad | AP-012, AP-053 |
+| P-35 | RPO de 4 h en la v1 con PITR, si la infraestructura lo permite (AP-005 04) | Decidir con el hosting | IT + Seguridad | AP-053, AP-058 |
+| P-36 | Modo de autenticación del disparador de Teams Workflows (tenant frente a «Anyone») e identidad de servicio (AP-005 02 §6) | Modo de tenant, si es viable | IT | AP-047 |
 | ~~P-26~~ | **Resuelta 2026-11-25:** commits locales autorizados en las ramas de ticket; push y merge siguen sin autorizar | — | — |

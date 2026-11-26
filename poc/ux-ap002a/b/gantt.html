@@ -65,7 +65,7 @@
         <h2 class="p-title" data-p-title></h2>
         <div class="p-tabs" role="tablist"><button type="button" role="tab" data-tab="detalle">Detalle</button><button type="button" role="tab" data-tab="historial">Historial</button></div>
       </div>
-      <div class="p-body" data-p-body></div>
+      <div class="p-body" data-p-body tabindex="0" role="region" aria-label="Contenido del detalle"></div>
     </aside>
   </div>
 </main>
@@ -75,6 +75,7 @@ import { DEMO } from '../shared/demo.js';
 import { mountGantt } from '../shared/gantt.js';
 import { initTheme, stateFromQuery, stateBlock, fmtShort, signed, el } from '../shared/util.js';
 
+import('../shared/tooltip.js').then((m) => m.initTooltips());
 initTheme('ap002a-b-theme', 'light');
 const $ = (s) => document.querySelector(s);
 const split = $('#split'), panel = $('#panel'), toast = $('#toast');

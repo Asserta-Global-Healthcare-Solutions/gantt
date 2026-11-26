@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Galería AP-002a</title>
+<style>
+  :root { --bg: #f4f1ea; --surface: #faf8f3; --text: #141413; --text-2: #4d4a43; --line: #d9d4c7; --accent: #1f5c63; color-scheme: light; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #121211; --surface: #181816; --text: #ece8de; --text-2: #b9b4a7; --line: #2e2c27; --accent: #6fb6bc; color-scheme: dark; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 system-ui, sans-serif; }
+  header { position: sticky; top: 0; z-index: 2; background: var(--bg); border-bottom: 3px double var(--line); padding: 14px 20px; display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: end; }
+  h1 { font-size: 20px; margin: 0; letter-spacing: -.02em; }
+  header p { margin: 2px 0 0; color: var(--text-2); font-size: 13px; }
+  .ctl { display: grid; gap: 3px; font: 500 11px/1 ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--text-2); }
+  select { font: 14px system-ui; padding: 5px 8px; border: 1px solid var(--line); border-radius: 3px; background: var(--surface); color: var(--text); min-height: 32px; }
+  main { padding: 16px 20px 48px; display: grid; gap: 28px; }
+  .row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  figure { margin: 0; display: grid; gap: 6px; }
+  figcaption { font: 500 12px/1.3 ui-monospace, monospace; color: var(--text-2); display: flex; justify-content: space-between; gap: 8px; }
+  figcaption b { color: var(--text); font-family: system-ui; font-size: 14px; }
+  figure.c figcaption b { color: var(--accent); }
+  a.shot { display: block; border: 1px solid var(--line); border-radius: 3px; overflow: hidden; background: var(--surface); }
+  a.shot:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  img { display: block; width: 100%; height: auto; }
+  h2 { font-size: 16px; margin: 0 0 10px; border-bottom: 1px solid var(--text); padding-bottom: 6px; }
+  .grid-c { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 18px; }
+  .miss { padding: 40px 12px; text-align: center; color: var(--text-2); font-size: 13px; }
+  @media (max-width: 900px) { .row { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <div><h1>AP-002a · Galería comparativa A · B · C</h1><p>Capturas de los prototipos con datos ficticios. Haz clic en una imagen para verla a tamaño completo.</p></div>
+  <label class="ctl">Vista<select id="v">
+    <option value="inicio">Inicio</option><option value="gantt" selected>Gantt</option>
+    <option value="gantt-conflicto">Gantt · conflicto seleccionado (1440)</option><option value="gantt-impacto">Gantt · vista previa de impacto (1440)</option>
+    <option value="gantt-historial">Gantt · historial (1440)</option><option value="estado-error">Estado de error (1440)</option><option value="estado-sinpermiso">Estado sin permiso (1440)</option>
+    <option value="movil">Inicio · móvil 390</option>
+  </select></label>
+  <label class="ctl">Tema<select id="t"><option value="light">Claro</option><option value="dark">Oscuro</option></select></label>
+  <label class="ctl">Ancho<select id="w"><option>1280</option><option selected>1440</option><option>1920</option></select></label>
+</header>
+<main>
+  <section aria-labelledby="h-cmp"><h2 id="h-cmp">Comparativa</h2><div class="row" id="cmp"></div></section>
+  <section aria-labelledby="h-c"><h2 id="h-c">Solo C · Asserta</h2><div class="grid-c" id="conly"></div></section>
+</main>
+<script>
+  const DIR = 'assets/ap-002a/galeria/';
+  const NAME = { a: 'A · Instrumento', b: 'B · Cuaderno', c: 'C · Asserta' };
+  const DEF = { a: 'dark', b: 'light', c: 'light' };
+  const $ = (s) => document.querySelector(s);
+  const fig = (file, title, note, cls = '') => {
+    const f = document.createElement('figure'); f.className = cls;
+    f.innerHTML = `<figcaption><b>${title}</b><span>${note}</span></figcaption><a class="shot" href="${DIR}${file}" target="_blank" rel="noopener"><img loading="lazy" alt="${title}: ${note}" src="${DIR}${file}"></a>`;
+    f.querySelector('img').addEventListener('error', (e) => { e.target.closest('a').outerHTML = `<div class="miss">Sin captura: ${file}</div>`; });
+    return f;
+  };
+  function draw() {
+    const v = $('#v').value, t = $('#t').value, w = $('#w').value;
+    const single = !['inicio', 'gantt'].includes(v);
+    $('#t').disabled = single; $('#w').disabled = single;
+    $('#cmp').replaceChildren(...['a', 'b', 'c'].map((d) => {
+      const file = v === 'inicio' || v === 'gantt' ? `${d}-${v}-${t}-${w}.jpg` : v === 'movil' ? `${d}-inicio-${DEF[d]}-390.jpg` : v.startsWith('estado') ? `${d}-${v}.jpg` : `${d}-${v}-1440.jpg`;
+      return fig(file, NAME[d], single ? `tema por defecto (${DEF[d] === 'dark' ? 'oscuro' : 'claro'})` : `${t === 'dark' ? 'oscuro' : 'claro'} · ${w} px`, d);
+    }));
+  }
+  const C_ONLY = [
+    ['c-gantt-light-1440.jpg', 'Gantt · claro · estándar', '1440 px'], ['c-gantt-dark-1440.jpg', 'Gantt · oscuro', '1440 px'],
+    ['c-gantt-compacta-1440.jpg', 'Modo compacto (28 px)', '1440 px'], ['c-gantt-compacta-dark-1920.jpg', 'Compacto · oscuro', '1920 px'],
+    ['c-gantt-panel-acoplado-1920.jpg', 'Panel de detalle acoplado', '1920 px'], ['c-gantt-panel-auto-flotante-1280.jpg', 'Panel flotante automático (poco espacio)', '1280 px'],
+    ['c-gantt-pantalla-completa-1440.jpg', 'Pantalla completa · compacto', '1440 px'], ['c-gantt-pantalla-completa-dark-1920.jpg', 'Pantalla completa · oscuro', '1920 px'],
+    ['c-gantt-critica-linea-base-1440.jpg', 'Ruta crítica y línea base (semana)', '1440 px'], ['c-gantt-conflicto-1440.jpg', 'Conflicto de planificación', '1440 px'],
+    ['c-gantt-conflicto-dark-1440.jpg', 'Conflicto · panel flotante · oscuro', '1440 px'], ['c-gantt-leyenda-1440.jpg', 'Leyenda cromática y atajos', '1440 px'],
+    ['c-inicio-light-1440.jpg', 'Inicio · claro', '1440 px'], ['c-inicio-dark-1440.jpg', 'Inicio · oscuro', '1440 px'],
+    ['c-gantt-movil-lista-390.jpg', 'Móvil · lista de lectura', '390 px'], ['c-gantt-movil-ficha-390.jpg', 'Móvil · ficha de tarea', '390 px'], ['c-inicio-light-390.jpg', 'Móvil · inicio', '390 px'],
+  ];
+  $('#conly').replaceChildren(...C_ONLY.map(([f, t, n]) => fig(f, t, n, 'c')));
+  for (const s of ['#v', '#t', '#w']) $(s).addEventListener('change', draw);
+  draw();
+</script>
+</body>
+</html>

@@ -276,6 +276,8 @@ export const DEMO = {
     "kind": "task",
     "parentId": "5",
     "durationDays": 10,
+    "scheduleMode": "manual",
+    "fixedStart": "2027-01-19",
     "estimatedEffortMinutes": 4800
    }
   ],
@@ -610,7 +612,7 @@ export const DEMO = {
     "finish": "2027-01-08",
     "totalFloat": 0,
     "critical": true,
-    "criticalReason": "cadenaFin",
+    "criticalReason": "ancladaManual",
     "progress": 0
    },
    "4.2": {
@@ -621,7 +623,7 @@ export const DEMO = {
     "finish": "2027-01-18",
     "totalFloat": 0,
     "critical": true,
-    "criticalReason": "cadenaFin",
+    "criticalReason": "ancladaManual",
     "progress": 0
    },
    "4.3": {
@@ -643,11 +645,11 @@ export const DEMO = {
     "finish": "2027-01-19",
     "totalFloat": 0,
     "critical": true,
-    "criticalReason": "cadenaFin",
+    "criticalReason": "ancladaManual",
     "progress": 0
    },
    "5.2": {
-    "class": "AUTO",
+    "class": "MANUAL",
     "startIdx": 52,
     "finishIdx": 62,
     "start": "2027-01-19",

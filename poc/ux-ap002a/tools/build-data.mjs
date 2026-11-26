@@ -41,7 +41,7 @@ const T = [
   ['4.3', 'Comunicación a proveedores', 'task', '4', { durationDays: 2, r: 'LF', effort: 960 }],
   ['5', 'Puesta en marcha', 'group'],
   ['5.1', 'Go-live', 'milestone', '5', { r: 'LF', deadline: '2027-02-05' }],
-  ['5.2', 'Soporte reforzado', 'task', '5', { durationDays: 10, r: 'OV', effort: 4800 }],
+  ['5.2', 'Soporte reforzado', 'task', '5', { durationDays: 10, scheduleMode: 'manual', fixedStart: '2027-01-19', r: 'OV', effort: 4800 }],
 ];
 const D = [
   ['1.1', '1.2', 'SS', 3], ['1.2', '1.3', 'FS', 0], ['1.3', '2.1', 'FS', 0], ['2.1', '2.2', 'SS', 1],

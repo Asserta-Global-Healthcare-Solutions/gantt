@@ -1,2 +1,4 @@
 node_modules/
 shots/
+shots-*.log
+!shots-final.log

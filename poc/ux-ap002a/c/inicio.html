@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inicio — Dirección C</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../shared/base.css">
+<link rel="stylesheet" href="c.css">
+</head>
+<body>
+<nav class="index" id="nav" aria-label="Índice">
+  <a class="wordmark" href="../index.html"><b>Asserta</b><span>Projects · provisional</span></a>
+  <div class="toc">
+    <a href="inicio.html" aria-current="page"><span class="n">01</span><span class="t">Inicio</span><span class="lead"></span><span class="c">9</span></a>
+    <a href="gantt.html"><span class="n">02</span><span class="t">Proyectos</span><span class="lead"></span><span class="c">4</span></a>
+    <div class="sub">
+      <a href="gantt.html"><span class="g-code">PPV2</span><span class="t">Portal de proveedores v2</span></a>
+      <a href="#"><span class="g-code">MERP</span><span class="t">Migración del ERP a la nube</span></a>
+      <a href="#"><span class="g-code">ILAB</span><span class="t">Interfaz con laboratorio externo</span></a>
+      <a href="#"><span class="g-code">AUDA</span><span class="t">Auditoría interna de accesos</span><span class="i i-lock lock" role="img" aria-label="Restringido"></span></a>
+    </div>
+    <a href="#" aria-disabled="true" title="Pendiente de AP-002b"><span class="n">03</span><span class="t">Cartera</span><span class="lead"></span><span class="c">—</span></a>
+    <a href="#" aria-disabled="true" title="Pendiente de AP-002b"><span class="n">04</span><span class="t">Recursos</span><span class="lead"></span><span class="c">—</span></a>
+    <a href="#" aria-disabled="true" title="Pendiente de AP-002b"><span class="n">05</span><span class="t">Horas</span><span class="lead"></span><span class="c">—</span></a>
+  </div>
+  <div class="foot">
+    <span class="av" title="Lucía Ferrer" role="img" aria-label="Lucía Ferrer">LF</span>
+    <span class="who">Lucía Ferrer<small>Jefa de proyecto</small></span><span class="sp"></span>
+    <button class="btn btn-ghost" type="button" data-theme-toggle aria-label="Modo oscuro"><span class="i i-moon" aria-hidden="true"></span></button>
+  </div>
+</nav>
+<main style="grid-template-rows: minmax(0, 1fr)">
+  <div class="home" id="home"></div>
+</main>
+<script type="module">
+import { DEMO } from '../shared/demo.js';
+import { inicioData } from '../shared/inicio-data.js';
+import { loadPrefs } from '../shared/prefs.js';
+import { initTheme, stateFromQuery, stateBlock, el, icon, avatar, fmtShort, fmtStamp, isoWeek, toEpochDay } from '../shared/util.js';
+
+import('../shared/tooltip.js').then((m) => m.initTooltips());
+initTheme('ap002a-c-theme', 'light');
+const home = document.querySelector('#home');
+const prefs = loadPrefs('ap002a-c-prefs');
+const mq = matchMedia('(max-width: 760px)');
+document.body.classList.toggle('nav-plegada', prefs.get('nav') === 'plegada');
+const navBtn = Object.assign(document.createElement('button'), { type: 'button', className: 'icon-btn', innerHTML: '<span class="i i-panel-left" aria-hidden="true"></span><span class="sr-only">Navegación</span>' });
+navBtn.setAttribute('aria-controls', 'nav'); navBtn.dataset.tip = 'Mostrar u ocultar la navegación ( [ )';
+const syncNav = () => navBtn.setAttribute('aria-expanded', String(mq.matches ? document.body.classList.contains('nav-abierta-movil') : !document.body.classList.contains('nav-plegada')));
+navBtn.addEventListener('click', () => { if (mq.matches) document.body.classList.toggle('nav-abierta-movil'); else { document.body.classList.toggle('nav-plegada'); prefs.save({ nav: document.body.classList.contains('nav-plegada') ? 'plegada' : 'abierta' }); } syncNav(); });
+document.addEventListener('keydown', (e) => { if (e.key === '[' && !e.target.closest('input, select, textarea')) navBtn.click(); });
+syncNav();
+const estado = stateFromQuery();
+if (estado) home.replaceChildren(stateBlock(estado));
+else {
+  const D = inicioData(DEMO), P = DEMO.people;
+  const pad = (n) => String(n).padStart(2, '0');
+  const dayFmt = (iso, o) => new Intl.DateTimeFormat('es-ES', { timeZone: 'UTC', ...o }).format(new Date(`${iso}T00:00:00Z`)).replace('.', '');
+  const fig = (n, label, cls, tip) => el('div', { class: `fig ${cls ?? ''}`, tabindex: '0', 'data-tip': tip }, el('b', {}, pad(n)), el('span', {}, label));
+  const sec = (n, title, extra) => el('div', { class: 'sec-h' }, el('span', { class: 'n' }, `${n} —`), el('h2', {}, title), el('span', { class: 'sp' }), extra);
+
+  // 01 · agenda por fecha de fin
+  const byDay = new Map();
+  for (const t of D.mine) (byDay.get(t.finish) ?? byDay.set(t.finish, []).get(t.finish)).push(t);
+  const agenda = [...byDay].map(([date, list]) => el('div', { class: `day${date < DEMO.today ? ' over' : ''}` },
+    el('div', { class: 'd' }, el('b', {}, dayFmt(date, { day: '2-digit' })), el('span', {}, date < DEMO.today ? `Vencida · ${dayFmt(date, { month: 'short' })}` : `${dayFmt(date, { weekday: 'short' })} · ${dayFmt(date, { month: 'short' })}`)),
+    el('ul', {}, ...list.map((t) => {
+      const inner = [el('span', { class: 'nm' }, t.milestone ? icon('diamond') : null, t.name, t.conflict ? el('span', { class: 'tag tag-conf', title: 'Conflicto' }, icon('triangle-alert', 'Conflicto')) : null),
+        el('span', { class: 'meta' }, `${t.code} · ${t.relation === 'responsable' ? 'responsable' : 'colaboras'}${t.critical ? ' · ruta crítica' : ''}`),
+        el('span', { class: 'pc' }, t.milestone ? '◇' : `${t.progress}%`)];
+      return el('li', {}, t.project === DEMO.project.code ? el('a', { href: `gantt.html?task=${t.id}` }, ...inner) : el('div', {}, ...inner));
+    }))));
+
+  home.replaceChildren(
+    el('div', { class: 'kicker' }, navBtn, el('span', {}, `${dayFmt(DEMO.today, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} · semana ${isoWeek(DEMO.today)}`), el('span', { class: 'sp' }), el('span', { class: 'proto-flag' }, 'Prototipo · datos ficticios')),
+    el('h1', { style: 'font-size:clamp(30px,3vw,42px);letter-spacing:-.04em;margin-top:10px' }, 'Mi trabajo'),
+    el('div', { class: 'figs', role: 'list', 'aria-label': 'Resumen' },
+      ...[fig(D.counts.open, 'tareas abiertas', '', 'Tareas no completadas en las que eres responsable o colaboras.'), fig(D.counts.overdue, 'vencida', D.counts.overdue ? 'warn' : '', 'Advertencia: fecha de fin anterior a hoy y sin completar.'), fig(D.counts.conflicts, 'conflicto de planificación', D.counts.conflicts ? 'danger' : '', 'Error de planificación: una dependencia no se cumple por una fecha manual o un hecho real.'), fig(D.counts.milestones14, 'hitos en 14 días', '', 'Hitos no completados con fecha en las próximas dos semanas.')].map((f) => (f.setAttribute('role', 'listitem'), f))),
+    el('div', { class: 'cols12' },
+      el('section', { class: 'c7', 'aria-labelledby': 's1' }, (() => { const h = sec('01', 'Mis tareas, por fecha de fin'); h.querySelector('h2').id = 's1'; return h; })(), ...agenda),
+      el('div', { class: 'c5', style: 'display:grid;gap:36px;align-content:start' },
+        el('section', { 'aria-labelledby': 's2' }, (() => { const h = sec('02', 'Hitos'); h.querySelector('h2').id = 's2'; return h; })(),
+          el('ul', { class: 'mstone' }, ...D.milestones.slice(0, 6).map((m) => el('li', {}, el('time', { datetime: m.date, class: m.overdue ? 'over' : '' }, fmtShort(m.date)), el('span', { class: 'g-code' }, m.project),
+            el('span', { class: m.overdue ? 'over' : m.critical ? 'crit' : '' }, m.name, m.overdue ? ' — vencido' : m.critical ? ' — ruta crítica' : ''))))),
+        el('section', { 'aria-labelledby': 's3' }, (() => { const h = sec('03', 'Avisos'); h.querySelector('h2').id = 's3'; return h; })(),
+          el('ul', { class: 'notes' },
+            ...D.conflicts.map((c) => el('li', {}, el('span', { class: 'conf' }, icon('triangle-alert', 'Conflicto')), el('div', {},
+              el('a', { href: `gantt.html?task=${c.successorId}` }, el('b', {}, `${c.successorId} ${c.name}`)),
+              el('p', {}, `Empieza ${c.deficitDays} días laborables antes de lo que exige ${c.type} desde ${c.pred}. Conflicto reconocido; la fecha manual se mantiene.`)))),
+            ...DEMO.notifications.map((n) => el('li', { class: n.unread ? 'unread' : '' }, n.actor ? avatar(P, n.actor, 'av-sm') : el('span', { class: 'av av-sm' }, icon('calendar-clock')),
+              el('div', {}, el('p', {}, el('b', {}, n.actor ? P[n.actor].name : 'Recordatorio'), ` ${n.text}`), n.quote ? el('p', { class: 'q' }, `«${n.quote}»`) : null, el('p', { class: 't' }, fmtStamp(n.at)))))))),
+      el('section', { class: 'c12', 'aria-labelledby': 's4' }, (() => { const h = sec('04', 'Proyectos'); h.querySelector('h2').id = 's4'; return h; })(),
+        el('table', { class: 'ptable' }, el('thead', {}, el('tr', {}, ...['Nº', 'Proyecto', 'Estado de salud', 'Avance', 'Próximo hito', 'Propietaria'].map((h) => el('th', { scope: 'col' }, h)))),
+          el('tbody', {}, ...D.projects.map((p) => el('tr', {},
+            el('td', { class: 'g-code' }, p.code),
+            el('td', { class: 'nm' }, p.gantt ? el('a', { href: 'gantt.html' }, p.name) : p.name, p.restricted ? el('span', { title: 'Proyecto restringido' }, ' ', icon('lock', 'Restringido')) : null),
+            el('td', {}, el('span', { class: `health ${p.health}` }, p.reason)),
+            el('td', { class: 'big' }, `${p.progress}%`),
+            el('td', {}, el('time', { class: 'num', datetime: p.next.date }, fmtShort(p.next.date)), ` ${p.next.name}`),
+            el('td', {}, el('span', { class: 'p-person' }, avatar(P, p.owner, 'av-xs'), P[p.owner].name)))))))));
+}
+</script>
+</body>
+</html>
