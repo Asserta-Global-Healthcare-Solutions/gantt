@@ -21,6 +21,7 @@ Estado: **propuesta para revisión**. No modifica el kit v1.0. Cada cambio (CH) 
 | CH-13 | Backlog | 06, backlog.csv | E-09, E-14, E-15, E-23, E-26 |
 | CH-14 | Gates propios del piloto | 06, 07 | H-A11, E-10, E-16 |
 | CH-15 | Testing y aceptación | 07 | todos |
+| CH-16 | Preferencias de interfaz por usuario en servidor (RF-34) | 02, 03, 05, 06, 07 | DD-C09, P-29 (aprobada 2026-11-26) |
 
 ---
 
@@ -183,6 +184,7 @@ Se suman a 04 §7. AP-004 los calcula, los verifica a mano y los firma.
 | access_request | **Nueva:** acceso excepcional (ver CH-08) |
 | external_issue | unique(`projectId, cloudId, issueId`) (E-12); **+** `audienceMode (metadata\|linkOnly)` |
 | audit_event | **+** índice (`projectId, targetType, targetId, occurredAt`) para el historial |
+| user_preference | **Nueva (CH-16, RF-34):** `userId` PK FK `user`, `theme (light\|dark)`, `density (estandar\|compacta)`, `defaultZoom (dia\|semana\|mes)`, `navCollapsed bool`, `panelMode (dock\|float\|closed)`, `panelWidthPx int CHECK (300..560)`, `taskColWidthPx int CHECK (140..420)`, `revision int`, `updatedAt`; aislamiento estricto al propio `userId` |
 
 ## CH-08
 **Autorización con alcance (D-07, D-16).**
@@ -267,7 +269,7 @@ CHECK (principalType <> 'user' OR principalId <> grantedBy)   -- sin autoasignac
 ## CH-12
 **UX (01 §5).**
 
-- AP-002a: dos direcciones visuales para Inicio y Gantt, en claro y oscuro, navegables. AP-002b: resto de pantallas, después de aprobar una dirección.
+- AP-002a (**cerrado 2026-11-26**): dirección **C · Asserta** aprobada definitivamente como referencia visual oficial ([sistema de diseño](AP-002a-sistema-diseno-c.md)); A y B conservados únicamente como evidencia histórica. AP-002b: resto de pantallas exclusivamente sobre C.
 - **Nuevos elementos obligatorios en los mocks:**
   - conflicto de planificación (vínculo marcado y panel de conflictos);
   - barra real frente a barra planificada en tareas con hechos;
@@ -275,7 +277,7 @@ CHECK (principalType <> 'user' OR principalId <> grantedBy)   -- sin autoasignac
   - pestaña «Historial»;
   - indicador de proyecto restringido;
   - solicitud de acceso excepcional.
-- Convención visual de los hitos (frontera en lunes o fin del viernes): se valida con el prototipo **[P-14]**.
+- Convención visual de los hitos: **P-14 resuelta (2026-11-25)** con convención A (frontera en el día laborable siguiente).
 
 ## CH-13
 **Backlog (06 y backlog.csv).** Detalle completo en [AP-001-06](AP-001-06-backlog-f0.md).
@@ -286,7 +288,7 @@ CHECK (principalType <> 'user' OR principalId <> grantedBy)   -- sin autoasignac
 - Gate F2: CPM y líneas base «implementados y probados»; el piloto no los exige salvo **[P-16]** (E-14).
 - Nuevos tickets: AP-056 (historial), AP-057 y AP-058 (CH-14).
 - AP-011 se divide en 011a/011b. AP-019 incluye conflictos y hechos. AP-014 incluye responsable y colaboradores.
-- Total: 55 → **59** tickets (+002b, +056, +057, +058; los 011a/b son subtareas).
+- Total: 55 → **59** tickets (+002b, +056, +057, +058; los 011a/b y 015a/b son subtareas).
 
 ## CH-14
 **Gates propios del piloto (H-A11).**
@@ -316,3 +318,24 @@ CHECK (principalType <> 'user' OR principalId <> grantedBy)   -- sin autoasignac
 - **AT-21.** Un admin no puede concederse acceso a un proyecto restringido. El break-glass aprobado por un tercero caduca a su hora y queda auditado.
 - **AT-22.** Crear asignaciones no modifica el esfuerzo estimado. Planificado y real se calculan aparte y cuadran con los fixtures.
 - **AT-23.** La suite dorada del motor da resultados idénticos en Node y en Chromium headless.
+- **AT-24 (RF-34).** Un usuario cambia tema, densidad, zoom, plegado de navegación y distribución de panel/tabla; al iniciar sesión en otro navegador o dispositivo recupera las mismas preferencias desde servidor; valores fuera de rango devuelven 400; ningún otro usuario (incluido `platform.admin`) puede leerlas o modificarlas.
+
+## CH-16
+**Preferencias de interfaz por usuario en el servidor (RF-34, P-29 aprobada 2026-11-26).**
+
+- **Requisito nuevo — RF-34 (P1):** persistencia en servidor de preferencias de interfaz por usuario autenticado, sincronizadas entre dispositivos y sesiones.
+  - **Campos incluidos:** `theme` (`light|dark`, defecto `light`), `density` (`estandar|compacta`, defecto `estandar`), `defaultZoom` (`dia|semana|mes`, defecto `dia`), `navCollapsed` (`boolean`, defecto `false`), `panelMode` (`dock|float|closed`, defecto `dock`), `panelWidthPx` (entero `300..560`, defecto `340`), `taskColWidthPx` (entero `140..420`, defecto `220`).
+  - **Fuente de verdad y sincronización:** el servidor es la fuente de verdad entre dispositivos. El cliente puede mantener una caché local no sensible para evitar parpadeos al cargar, pero reconcilia con `GET /api/v1/me/preferences` al autenticar o recuperar sesión. Los parámetros de URL sobrescriben únicamente la sesión visual actual y no se persisten.
+- **Modelo de datos (`05`, `user_preference`):** relación 1:1 con `user` (`userId` PK FK `user`, `ON DELETE RESTRICT` o archivado según política de baja), checks de dominio/rango en BD, `revision int` y `updatedAt` UTC. No almacena secretos, permisos ni datos de proyectos.
+- **API (`03`, `/api/v1`):**
+  - `GET /api/v1/me/preferences`: devuelve las preferencias persistidas o los valores por defecto oficiales de C · Asserta si aún no existe fila.
+  - `PUT /api/v1/me/preferences` (o `PATCH` idempotente): valida con Zod estricto (rechaza campos desconocidos y rangos inválidos con `400`), deriva `userId` exclusivamente de la sesión server-side (nunca del cuerpo ni de la ruta) y actualiza en transacción.
+- **Seguridad y privacidad:** aislamiento estricto por `userId`; un usuario nunca puede leer ni modificar las preferencias de otro (ni siquiera `platform.admin`). Sin datos personales adicionales ni datos sensibles.
+- **Criterios de aceptación (RF-34):**
+  1. Guardar cualquier preferencia contemplada persiste en `user_preference` y devuelve el estado normalizado.
+  2. Abrir sesión con el mismo usuario en otro navegador o dispositivo aplica las mismas preferencias automáticamente.
+  3. Un usuario sin fila previa recibe los valores por defecto de la Dirección C (`light`, `estandar`, `dia`, navegación abierta, `dock`, `340`, `220`).
+  4. Cargas con valores fuera de enum/rango o campos extra devuelven `400` sin mutar estado.
+  5. Peticiones no autenticadas devuelven `401`; ningún parámetro permite leer o escribir preferencias ajenas.
+  6. Un fallo de red al guardar notifica error recuperable sin corromper la vista activa.
+- **Impacto en backlog (`06`):** `AP-015` se desglosa en `AP-015a` (P0: shell web e inicio personal) y `AP-015b` (P1, S: tabla `user_preference`, endpoints `GET/PUT /api/v1/me/preferences`, sincronización entre dispositivos y pruebas positivas/negativas AT-24).
