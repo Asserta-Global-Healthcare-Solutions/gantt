@@ -1,0 +1,146 @@
+{
+  "group": "dep",
+  "kind": "schedule",
+  "description": "Cuatro tipos de dependencia, lags, varias predecesoras, recorte por inicio de proyecto e hitos. Calendario L-V 480 min sin festivos; inicio lunes 2026-11-30 (frontera 0). Índices: 0=11-30 L, 1=12-01 M, 2=12-02 X, 3=12-03 J, 4=12-04 V, 5=12-07 L, 6=12-08 M.",
+  "defaults": {
+    "project": { "startDate": "2026-11-30", "timezone": "Europe/Madrid" },
+    "calendar": { "weekdayMinutes": [480, 480, 480, 480, 480, 0, 0], "exceptions": [] },
+    "today": "2026-11-30"
+  },
+  "cases": [
+    {
+      "id": "DEP-01", "title": "FS lag 0 (caso v1.0)", "refs": ["04 §7", "RF-08"],
+      "rationale": "A d2: s0 f2 (L-M). B FS: sB ≥ fA = 2 → s2 f5 (X-V); fin exclusivo 5 = lunes. T=5. LS_B=5-3=2 → holgura 0; LS_A=min(5-2, LS_B-0-2=0)=0.",
+      "input": { "tasks": [{ "id": "A", "kind": "task", "durationDays": 2 }, { "id": "B", "kind": "task", "durationDays": 3 }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "FS", "lagDays": 0 }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 5, "conflicts": [], "warnings": [],
+        "tasks": { "A": { "class": "AUTO", "startIdx": 0, "finishIdx": 2, "start": "2026-11-30", "finish": "2026-12-01", "totalFloat": 0, "critical": true, "criticalReason": "cadenaFin" },
+                   "B": { "class": "AUTO", "startIdx": 2, "finishIdx": 5, "start": "2026-12-02", "finish": "2026-12-04", "totalFloat": 0, "critical": true } } },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
+    },
+    {
+      "id": "DEP-02", "title": "SS lag +1 (caso v1.0)", "refs": ["04 §7"],
+      "rationale": "sB ≥ sA + 1 = 1 → B s1 f4 (M-J). T=max(2,4)=4. LS_B=1 → 0. LS_A=min(4-2=2, LS_B-1=0)=0.",
+      "input": { "tasks": [{ "id": "A", "kind": "task", "durationDays": 2 }, { "id": "B", "kind": "task", "durationDays": 3 }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "SS", "lagDays": 1 }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 4,
+        "tasks": { "A": { "startIdx": 0, "finishIdx": 2, "totalFloat": 0, "critical": true }, "B": { "startIdx": 1, "finishIdx": 4, "start": "2026-12-01", "finish": "2026-12-03", "totalFloat": 0 } } },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
+    },
+    {
+      "id": "DEP-03", "title": "FF lag 0 con recorte por inicio de proyecto (caso v1.0)", "refs": ["04 §7"],
+      "rationale": "sB ≥ fA + 0 − dB = 2 − 3 = −1 → recorte a 0. B s0 f3. T=3. A: LS=min(3−2=1, LF_B−0−2 = 3−2 = 1) = 1 → holgura 1, no crítica.",
+      "input": { "tasks": [{ "id": "A", "kind": "task", "durationDays": 2 }, { "id": "B", "kind": "task", "durationDays": 3 }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "FF", "lagDays": 0 }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 3,
+        "tasks": { "A": { "totalFloat": 1, "critical": false, "criticalReason": null }, "B": { "startIdx": 0, "finishIdx": 3, "start": "2026-11-30", "finish": "2026-12-02", "totalFloat": 0, "critical": true } } },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
+    },
+    {
+      "id": "DEP-04", "title": "SF lag 0 con recorte (caso v1.0)", "refs": ["04 §7"],
+      "rationale": "sB ≥ sA + 0 − dB = −3 → 0. B s0 f3. T=3. A: LS=min(1, LF_B − 0 = 3) = 1 → holgura 1.",
+      "input": { "tasks": [{ "id": "A", "kind": "task", "durationDays": 2 }, { "id": "B", "kind": "task", "durationDays": 3 }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "SF", "lagDays": 0 }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 3, "tasks": { "A": { "totalFloat": 1 }, "B": { "startIdx": 0, "finishIdx": 3, "totalFloat": 0 } } },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
+    },
+    {
+      "id": "DEP-05", "title": "SF lag 0 con A en s=5 (caso v1.0): la sucesora termina cuando empieza A", "refs": ["04 §7"],
+      "rationale": "A notBefore 12-07 → s5 f7. B d2 SF: sB ≥ 5 − 2 = 3 → s3 f5 (J-V). T=7. B: LS=7−2=5 → holgura 2. A: LS=min(7−2=5, LF_B − 0 = 7) = 5 → 0.",
+      "input": { "tasks": [{ "id": "A", "kind": "task", "durationDays": 2, "notBefore": "2026-12-07" }, { "id": "B", "kind": "task", "durationDays": 2 }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "SF", "lagDays": 0 }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 7,
+        "tasks": { "A": { "startIdx": 5, "finishIdx": 7, "start": "2026-12-07", "finish": "2026-12-08", "totalFloat": 0, "critical": true },
+                   "B": { "startIdx": 3, "finishIdx": 5, "start": "2026-12-03", "finish": "2026-12-04", "totalFloat": 2, "critical": false } } },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
+    },
+    {
+      "id": "DEP-06", "title": "FS lag −1 (caso v1.0)", "refs": ["04 §7"],
+      "rationale": "sB ≥ 2 − 1 = 1 → B s1 f4 (M-J). T=4. A: LS=min(2, LS_B + 1 − 2 = 0) = 0.",
+      "input": { "tasks": [{ "id": "A", "kind": "task", "durationDays": 2 }, { "id": "B", "kind": "task", "durationDays": 3 }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "FS", "lagDays": -1 }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 4,
+        "tasks": { "A": { "totalFloat": 0 }, "B": { "startIdx": 1, "finishIdx": 4, "start": "2026-12-01", "finish": "2026-12-03", "totalFloat": 0 } } },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
+    },
+    {
+      "id": "DEP-07", "title": "FS con festivo el miércoles (caso v1.0)", "refs": ["04 §7", "RF-09"],
+      "rationale": "Excepción 12-02 = 0 min. Índices: 0=L 11-30, 1=M 12-01, 2=J 12-03, 3=V 12-04, 4=L 12-07. A s0 f2. B FS: s2 (jueves) f5 → último día ocupado índice 4 = lunes 12-07.",
+      "input": { "calendar": { "weekdayMinutes": [480, 480, 480, 480, 480, 0, 0], "exceptions": [{ "date": "2026-12-02", "minutes": 0 }] },
+        "tasks": [{ "id": "A", "kind": "task", "durationDays": 2 }, { "id": "B", "kind": "task", "durationDays": 3 }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "FS", "lagDays": 0 }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 5,
+        "tasks": { "A": { "start": "2026-11-30", "finish": "2026-12-01" }, "B": { "startIdx": 2, "finishIdx": 5, "start": "2026-12-03", "finish": "2026-12-07" } } },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
+    },
+    {
+      "id": "DEP-08", "title": "Hito FS tras B (caso v1.0): frontera del siguiente día laborable", "refs": ["04 §7", "P-14"],
+      "rationale": "B s2 f5. M d0 FS: s=f=5 → convención A (P-14): se muestra el lunes 12-07. Holgura de M: LS=T−0=5 → 0.",
+      "input": { "tasks": [{ "id": "A", "kind": "task", "durationDays": 2 }, { "id": "B", "kind": "task", "durationDays": 3 }, { "id": "M", "kind": "milestone", "durationDays": 0 }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "FS", "lagDays": 0 }, { "id": "d2", "predecessorId": "B", "successorId": "M", "type": "FS", "lagDays": 0 }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 5,
+        "tasks": { "M": { "class": "AUTO", "startIdx": 5, "finishIdx": 5, "start": "2026-12-07", "finish": "2026-12-07", "totalFloat": 0, "critical": true } } },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
+    },
+    {
+      "id": "DEP-09", "title": "Dos predecesoras: se toma el máximo (caso v1.0)", "refs": ["04 §7"],
+      "rationale": "A d2 f2, C d4 f4. B d1 FS de ambas: sB = max(2,4) = 4 (viernes) f5. T=5. A: LS=min(3, 4−2=2) → holgura 2. C: LS=min(1, 4−4=0) → 0.",
+      "input": { "tasks": [{ "id": "A", "kind": "task", "durationDays": 2 }, { "id": "C", "kind": "task", "durationDays": 4 }, { "id": "B", "kind": "task", "durationDays": 1 }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "FS", "lagDays": 0 }, { "id": "d2", "predecessorId": "C", "successorId": "B", "type": "FS", "lagDays": 0 }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 5,
+        "tasks": { "A": { "totalFloat": 2, "critical": false }, "C": { "totalFloat": 0, "critical": true }, "B": { "startIdx": 4, "finishIdx": 5, "start": "2026-12-04", "finish": "2026-12-04" } } },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
+    },
+    {
+      "id": "DEP-10", "title": "Dos tipos distintos entre el mismo par (SS+1 y FF+3)", "refs": ["04 §2"],
+      "rationale": "A d3 f3. B d2. SS: sB ≥ 0+1 = 1. FF: sB ≥ 3+3−2 = 4. Máximo 4 → B s4 f6 (V-L). T=6. A: LS=min(6−3=3, SS: 4−1=3, FF: LF_B−3−3 = 6−6 = 0) = 0.",
+      "input": { "tasks": [{ "id": "A", "kind": "task", "durationDays": 3 }, { "id": "B", "kind": "task", "durationDays": 2 }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "SS", "lagDays": 1 }, { "id": "d2", "predecessorId": "A", "successorId": "B", "type": "FF", "lagDays": 3 }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 6,
+        "tasks": { "A": { "totalFloat": 0 }, "B": { "startIdx": 4, "finishIdx": 6, "start": "2026-12-04", "finish": "2026-12-07", "totalFloat": 0 } } },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
+    },
+    {
+      "id": "DEP-11", "title": "FS lag +2", "refs": ["RF-08"],
+      "rationale": "sB ≥ 2+2 = 4 → B d1 s4 f5 (viernes). A: LS=min(3, 4−2−2=0) = 0.",
+      "input": { "tasks": [{ "id": "A", "kind": "task", "durationDays": 2 }, { "id": "B", "kind": "task", "durationDays": 1 }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "FS", "lagDays": 2 }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 5, "tasks": { "A": { "totalFloat": 0 }, "B": { "startIdx": 4, "finishIdx": 5, "start": "2026-12-04" } } },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
+    },
+    {
+      "id": "DEP-12", "title": "SS lag −3 recortado al inicio del proyecto", "refs": ["RF-08", "PR-08"],
+      "rationale": "sB ≥ 0 − 3 = −3 → recorte a 0. B d1 s0 f1. T=2. B: LS=2−1=1 → holgura 1. A: LS=min(0, LS_B+3=4) = 0.",
+      "input": { "tasks": [{ "id": "A", "kind": "task", "durationDays": 2 }, { "id": "B", "kind": "task", "durationDays": 1 }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "SS", "lagDays": -3 }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 2, "tasks": { "A": { "totalFloat": 0, "critical": true }, "B": { "startIdx": 0, "finishIdx": 1, "totalFloat": 1, "critical": false } } },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
+    },
+    {
+      "id": "DEP-13", "title": "notBefore en sábado se normaliza al lunes", "refs": ["CH-02 §2.2"],
+      "rationale": "B(2026-12-05 sábado) = primer laborable ≥ sábado = lunes 12-07 = índice 5. B d2 s5 f7.",
+      "input": { "tasks": [{ "id": "B", "kind": "task", "durationDays": 2, "notBefore": "2026-12-05" }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 7, "tasks": { "B": { "startIdx": 5, "finishIdx": 7, "start": "2026-12-07", "finish": "2026-12-08" } } },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
+    },
+    {
+      "id": "DEP-14", "title": "Hito como predecesora (FS y FF)", "refs": ["RF-08"],
+      "rationale": "M notBefore 12-02 → s=f=2. B d2 FS: s2 f4. C d3 FF: sC ≥ 2 − 3 = −1 → 0, f3. T=4. B: LS=2 → 0. C: LS=4−3=1 → holgura 1. M: LS=min(4, FS: 2−0−0 = 2, FF: LF_C−0−0 = 4) = 2 → 0.",
+      "input": { "tasks": [{ "id": "M", "kind": "milestone", "durationDays": 0, "notBefore": "2026-12-02" }, { "id": "B", "kind": "task", "durationDays": 2 }, { "id": "C", "kind": "task", "durationDays": 3 }],
+        "dependencies": [{ "id": "d1", "predecessorId": "M", "successorId": "B", "type": "FS", "lagDays": 0 }, { "id": "d2", "predecessorId": "M", "successorId": "C", "type": "FF", "lagDays": 0 }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 4,
+        "tasks": { "M": { "startIdx": 2, "finishIdx": 2, "start": "2026-12-02", "totalFloat": 0 }, "B": { "startIdx": 2, "finishIdx": 4, "totalFloat": 0 }, "C": { "startIdx": 0, "finishIdx": 3, "totalFloat": 1 } } },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
+    },
+    {
+      "id": "DEP-15", "title": "Hitos como sucesores con los cuatro tipos", "refs": ["RF-08"],
+      "rationale": "A d2 s0 f2. M1 FS: 2. M2 FF: sM ≥ fA − 0 = 2. M3 SS: sM ≥ 0. M4 SF: sM ≥ sA − 0 = 0. T=2. Holguras: M1 0, M2 0, M3 2, M4 2; A: LS=min(0, 2−2, 2−2, 2, 2) = 0.",
+      "input": { "tasks": [{ "id": "A", "kind": "task", "durationDays": 2 }, { "id": "M1", "kind": "milestone" }, { "id": "M2", "kind": "milestone" }, { "id": "M3", "kind": "milestone" }, { "id": "M4", "kind": "milestone" }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "M1", "type": "FS", "lagDays": 0 }, { "id": "d2", "predecessorId": "A", "successorId": "M2", "type": "FF", "lagDays": 0 },
+          { "id": "d3", "predecessorId": "A", "successorId": "M3", "type": "SS", "lagDays": 0 }, { "id": "d4", "predecessorId": "A", "successorId": "M4", "type": "SF", "lagDays": 0 }] },
+      "expected": { "outcome": "ok", "projectFinishIdx": 2,
+        "tasks": { "A": { "totalFloat": 0 }, "M1": { "startIdx": 2, "start": "2026-12-02", "totalFloat": 0 }, "M2": { "startIdx": 2, "totalFloat": 0 }, "M3": { "startIdx": 0, "start": "2026-11-30", "totalFloat": 2 }, "M4": { "startIdx": 0, "totalFloat": 2 } } },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
+    }
+  ]
+}

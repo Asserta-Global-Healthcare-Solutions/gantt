@@ -1,0 +1,11 @@
+{
+  "name": "asserta-engine-oracle-poc",
+  "private": true,
+  "version": "0.0.0",
+  "description": "ORÁCULO DESECHABLE de AP-004. No es el motor de producto. Sin dependencias.",
+  "type": "module",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "test": "node --test \"test/**/*.test.mjs\""
+  }
+}

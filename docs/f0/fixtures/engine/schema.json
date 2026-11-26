@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "asserta-projects/engine-fixtures/v1",
+  "title": "Casos dorados del motor de planificación (AP-004)",
+  "description": "Un fichero agrupa casos de un mismo tipo. `defaults` se fusiona superficialmente con `input` de cada caso. `expected` solo compara los campos presentes (coincidencia parcial en objetos, exacta en listas). Para errores se comparan los códigos como conjunto.",
+  "type": "object",
+  "required": ["group", "kind", "cases"],
+  "properties": {
+    "group": { "type": "string", "description": "cal | dep | c3 | val | wbs | cpm | dist | cost | base" },
+    "kind": { "enum": ["schedule", "calendar", "distribution", "cost", "baseline"] },
+    "description": { "type": "string" },
+    "defaults": { "type": "object" },
+    "cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "rationale", "input", "expected", "computedBy", "reviewedBy"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Z0-9]+-[A-Za-z0-9-]+$" },
+          "title": { "type": "string" },
+          "rationale": { "type": "string", "description": "Cálculo a mano, paso a paso" },
+          "refs": { "type": "array", "items": { "type": "string" }, "description": "RF, CH, PR o caso v1.0 de origen" },
+          "input": { "type": "object" },
+          "expected": { "type": "object" },
+          "computedBy": { "type": "string" },
+          "reviewedBy": { "type": ["string", "null"], "description": "null hasta la firma humana" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "scheduleInput": {
+      "type": "object",
+      "properties": {
+        "project": { "type": "object", "required": ["startDate", "timezone"], "properties": { "startDate": { "type": "string", "format": "date" }, "timezone": { "type": "string" } } },
+        "calendar": { "type": "object", "required": ["weekdayMinutes"], "properties": { "weekdayMinutes": { "type": "array", "items": { "type": "integer", "minimum": 0 }, "minItems": 7, "maxItems": 7, "description": "lunes … domingo" }, "exceptions": { "type": "array", "items": { "type": "object", "required": ["date", "minutes"] } } } },
+        "today": { "type": "string", "format": "date" },
+        "tasks": { "type": "array", "items": { "type": "object", "required": ["id", "kind"], "properties": {
+          "id": { "type": "string" }, "parentId": { "type": ["string", "null"] }, "kind": { "enum": ["task", "milestone", "group"] },
+          "durationDays": { "type": "integer" }, "scheduleMode": { "enum": ["auto", "manual"] }, "fixedStart": { "type": "string" }, "notBefore": { "type": "string" }, "deadline": { "type": "string" },
+          "status": { "enum": ["pendiente", "en_curso", "bloqueada", "completada"] }, "progress": { "type": "integer", "minimum": 0, "maximum": 100 },
+          "actualStart": { "type": "string" }, "actualFinish": { "type": "string" }, "remainingDurationDays": { "type": "integer" }, "remainingAsOf": { "type": "string" },
+          "estimatedEffortMinutes": { "type": "integer" } } } },
+        "dependencies": { "type": "array", "items": { "type": "object", "required": ["id", "predecessorId", "successorId", "type", "lagDays"], "properties": { "type": { "enum": ["FS", "SS", "FF", "SF"] } } } },
+        "previousConflicts": { "type": "array" }
+      }
+    },
+    "scheduleExpected": {
+      "type": "object",
+      "properties": {
+        "outcome": { "enum": ["ok", "error"] },
+        "errors": { "type": "array", "items": { "type": "string" } },
+        "projectFinishIdx": { "type": "integer" },
+        "tasks": { "type": "object", "additionalProperties": { "type": "object", "properties": {
+          "class": { "enum": ["AUTO", "MANUAL", "FACT_DONE", "FACT_RUNNING", "GROUP"] }, "startIdx": { "type": ["integer", "null"] }, "finishIdx": { "type": ["integer", "null"] },
+          "start": { "type": "string" }, "finish": { "type": "string" }, "totalFloat": { "type": ["integer", "null"] }, "critical": { "type": "boolean" },
+          "criticalReason": { "enum": ["cadenaFin", "ancladaManual", null] }, "progress": { "type": ["integer", "null"] } } } },
+        "conflicts": { "type": "array" },
+        "warnings": { "type": "array" },
+        "newConflicts": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

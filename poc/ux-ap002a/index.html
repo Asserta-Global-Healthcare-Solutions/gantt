@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AP-002a · Direcciones visuales</title>
+<link rel="icon" href="data:,">
+<style>
+  :root { --bg: #f7f7f5; --text: #141413; --text-2: #4f4e48; --line: #dcdbd5; color-scheme: light; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #121211; --text: #ecebe4; --text-2: #b4b3aa; --line: #2e2d29; color-scheme: dark; } }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 40px 20px 64px; }
+  h1 { font-size: 28px; letter-spacing: -.02em; margin: 0 0 6px; }
+  p { color: var(--text-2); max-width: 70ch; margin: 0 0 12px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0; border-top: 1px solid var(--line); margin-top: 28px; }
+  section { padding: 20px 20px 20px 0; border-bottom: 1px solid var(--line); }
+  section + section { padding-left: 20px; border-left: 1px solid var(--line); }
+  h2 { font-size: 18px; margin: 0 0 4px; }
+  ul { padding-left: 18px; margin: 10px 0; }
+  a { color: inherit; text-underline-offset: 3px; }
+  code, .m { font: 12.5px ui-monospace, monospace; }
+  .warn { border-left: 2px solid currentColor; padding-left: 12px; }
+</style>
+</head>
+<body>
+<main>
+  <p class="m">AP-002a · Asserta Projects · prototipo desechable</p>
+  <h1>Dos direcciones visuales</h1>
+  <p>Mismos datos ficticios y el mismo comportamiento; cambian la identidad, la densidad, la tipografía, la composición y la firma. Las fechas, holguras, ruta crítica y conflictos los calcula el oráculo de AP-004 (no es el motor de producto).</p>
+  <p class="warn">Prototipo con datos sintéticos. No es código de producción ni la identidad definitiva de Asserta: la marca se sustituirá por tokens cuando se entreguen los recursos gráficos (P-25).</p>
+  <div class="grid">
+    <section>
+      <h2>A · Instrumento</h2>
+      <p>Oscuro primero, grafito cálido y una señal ámbar de fósforo. Geist y Geist Mono. Filas de 28 px, rail de iconos, cajón flotante. Firma: lecturas de instrumento.</p>
+      <ul><li><a href="a/inicio.html">Inicio</a></li><li><a href="a/gantt.html">Gantt</a></li><li><a href="a/gantt.html?task=3.3">Gantt con conflicto seleccionado</a></li></ul>
+    </section>
+    <section>
+      <h2>B · Cuaderno</h2>
+      <p>Claro primero, papel, tinta y un bermellón. Inter Tight y JetBrains Mono. Filas de 36 px, índice de libro, panel acoplado. Firma: numeración editorial y filetes.</p>
+      <ul><li><a href="b/inicio.html">Inicio</a></li><li><a href="b/gantt.html">Gantt</a></li><li><a href="b/gantt.html?task=3.3">Gantt con conflicto seleccionado</a></li></ul>
+    </section>
+  </div>
+  <h2 style="margin-top:32px">Qué probar</h2>
+  <ul>
+    <li>Arrastrar una barra automática o manual no iniciada (o <code>Alt+←/→</code> sobre la fila): vista previa, diálogo de impacto y reconocimiento de conflictos.</li>
+    <li>Estirar el borde derecho de una barra para cambiar la duración.</li>
+    <li>Escala Día/Semana/Mes, Ruta crítica, Línea base, filtros por persona, estado y texto (el plan no cambia).</li>
+    <li>Teclado en la tabla: flechas, Enter, contraer y expandir grupos. Tema claro/oscuro en el rail o el índice.</li>
+    <li>Estados: añade <code>?estado=vacio</code>, <code>error</code>, <code>sinpermiso</code> o <code>cargando</code> a cualquier página.</li>
+  </ul>
+</main>
+</body>
+</html>

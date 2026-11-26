@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portal de proveedores v2 · Gantt — Dirección B</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../shared/base.css">
+<link rel="stylesheet" href="b.css">
+</head>
+<body>
+<nav class="index" aria-label="Índice">
+  <a class="wordmark" href="../index.html"><b>Asserta</b><span>Projects · provisional</span></a>
+  <div class="toc">
+    <a href="inicio.html"><span class="n">01</span><span class="t">Inicio</span><span class="lead"></span><span class="c">9</span></a>
+    <a href="gantt.html" class="open"><span class="n">02</span><span class="t">Proyectos</span><span class="lead"></span><span class="c">4</span></a>
+    <div class="sub">
+      <a href="gantt.html" aria-current="page"><span class="g-code">PPV2</span><span class="t">Portal de proveedores v2</span></a>
+      <a href="#"><span class="g-code">MERP</span><span class="t">Migración del ERP a la nube</span></a>
+      <a href="#"><span class="g-code">ILAB</span><span class="t">Interfaz con laboratorio externo</span></a>
+      <a href="#"><span class="g-code">AUDA</span><span class="t">Auditoría interna de accesos</span><span class="i i-lock lock" role="img" aria-label="Restringido"></span></a>
+    </div>
+    <a href="#" aria-disabled="true" title="Pendiente de AP-002b"><span class="n">03</span><span class="t">Cartera</span><span class="lead"></span><span class="c">—</span></a>
+    <a href="#" aria-disabled="true" title="Pendiente de AP-002b"><span class="n">04</span><span class="t">Recursos</span><span class="lead"></span><span class="c">—</span></a>
+    <a href="#" aria-disabled="true" title="Pendiente de AP-002b"><span class="n">05</span><span class="t">Horas</span><span class="lead"></span><span class="c">—</span></a>
+  </div>
+  <div class="foot">
+    <span class="av" title="Lucía Ferrer" role="img" aria-label="Lucía Ferrer">LF</span>
+    <span class="who">Lucía Ferrer<small>Jefa de proyecto</small></span><span class="sp"></span>
+    <button class="btn btn-ghost" type="button" data-theme-toggle aria-label="Modo oscuro"><span class="i i-moon" aria-hidden="true"></span></button>
+  </div>
+</nav>
+<main>
+  <header class="masthead">
+    <div class="kicker"><a href="#">02 Proyectos</a><span>/</span><span>PPV2</span><span class="sp"></span><span class="proto-flag">Prototipo · datos ficticios</span></div>
+    <h1>Portal de proveedores v2</h1>
+    <p class="dateline" id="dateline"></p>
+    <nav class="tabs" aria-label="Vistas del proyecto">
+      <a href="#" aria-current="page"><span class="n">a</span>Gantt</a><a href="#"><span class="n">b</span>Tabla</a><a href="#"><span class="n">c</span>Kanban</a><a href="#"><span class="n">d</span>Ajustes</a>
+    </nav>
+  </header>
+  <div class="toolbar" role="toolbar" aria-label="Controles del Gantt">
+    <div class="seg" role="group" aria-label="Escala">
+      <button type="button" data-zoom="dia" aria-pressed="true">Día</button><button type="button" data-zoom="semana" aria-pressed="false">Semana</button><button type="button" data-zoom="mes" aria-pressed="false">Mes</button>
+    </div>
+    <button class="btn" type="button" data-today>Hoy</button>
+    <button class="btn" type="button" data-toggle="critical" aria-pressed="true">Ruta crítica</button>
+    <button class="btn" type="button" data-toggle="baseline" aria-pressed="true">Línea base</button>
+    <label class="field"><span class="sr-only">Persona</span><select id="f-resp"><option value="">Todas las personas</option></select></label>
+    <div class="chips" role="group" aria-label="Estado">
+      <button class="chip" type="button" data-status="pendiente" aria-pressed="false">Pendiente</button>
+      <button class="chip" type="button" data-status="en_curso" aria-pressed="false">En curso</button>
+      <button class="chip" type="button" data-status="completada" aria-pressed="false">Completada</button>
+    </div>
+    <label class="field"><span class="i i-search" aria-hidden="true"></span><span class="sr-only">Buscar tarea</span><input id="f-q" type="search" placeholder="Filtrar tareas" size="14"></label>
+    <span class="fnote" id="fnote" aria-live="polite"></span>
+    <span class="sp"></span>
+    <button class="btn btn-ghost" type="button" id="panel-btn" aria-pressed="true" aria-controls="panel">Panel</button>
+  </div>
+  <div class="split" id="split">
+    <div id="gantt"></div>
+    <div class="gutter" id="gutter" role="separator" aria-orientation="vertical" aria-label="Ancho del panel" aria-valuemin="300" aria-valuemax="560" aria-valuenow="340" tabindex="0"></div>
+    <aside class="panel" id="panel" aria-label="Detalle de la tarea">
+      <div class="p-head">
+        <h2 class="p-title" data-p-title></h2>
+        <div class="p-tabs" role="tablist"><button type="button" role="tab" data-tab="detalle">Detalle</button><button type="button" role="tab" data-tab="historial">Historial</button></div>
+      </div>
+      <div class="p-body" data-p-body></div>
+    </aside>
+  </div>
+</main>
+<div class="toast" id="toast" role="status" hidden></div>
+<script type="module">
+import { DEMO } from '../shared/demo.js';
+import { mountGantt } from '../shared/gantt.js';
+import { initTheme, stateFromQuery, stateBlock, fmtShort, signed, el } from '../shared/util.js';
+
+initTheme('ap002a-b-theme', 'light');
+const $ = (s) => document.querySelector(s);
+const split = $('#split'), panel = $('#panel'), toast = $('#toast');
+const estado = stateFromQuery();
+if (estado) { split.replaceChildren(stateBlock(estado)); split.style.display = 'block'; $('#panel-btn').remove(); }
+else {
+  let tt;
+  const say = (msg) => { toast.textContent = msg; toast.hidden = false; clearTimeout(tt); tt = setTimeout(() => (toast.hidden = true), 2600); };
+  const g = mountGantt($('#gantt'), DEMO, {
+    id: 'b', rowH: 36, labelInside: true, px: { dia: 36, semana: 15, mes: 5 }, panel,
+    columns: [{ key: 'code', label: 'Nº', longLabel: 'Código WBS' }, { key: 'name', label: 'Tarea' }, { key: 'resp', label: 'Resp.', longLabel: 'Responsable' }, { key: 'finish', label: 'Fin' }, { key: 'prog', label: '%', longLabel: 'Progreso' }],
+    barLabel: (m) => m.name,
+    msLabel: (name, d) => `${d.toUpperCase()} · ${name}`,
+    todayLabel: (d) => `HOY · ${d.toUpperCase()}`,
+    toast: say,
+    onRender: ({ plan, revision, filtering, preview }) => {
+      const slip = plan.tasks['5.1'].startIdx - DEMO.baseline.tasks['5.1'].startIdx;
+      $('#dateline').replaceChildren(
+        el('span', {}, `Rev. ${revision}${preview ? ' · vista previa' : ''}`),
+        el('span', {}, `${fmtShort(DEMO.project.startDate)} 2026 → ${fmtShort(plan.tasks['5.1'].start)} 2027`),
+        el('span', { class: slip > 0 ? 'alert' : '' }, `Línea base ${signed(slip)} d`),
+        el('span', { class: plan.conflicts.length ? 'alert' : '' }, `${plan.conflicts.length} conflicto${plan.conflicts.length === 1 ? '' : 's'}`),
+        el('span', {}, 'Calendario L–V · Europe/Madrid'));
+      $('#fnote').textContent = filtering ? 'Filtro activo · el plan no cambia' : '';
+    },
+  });
+  const sel = $('#f-resp');
+  for (const [k, p] of Object.entries(DEMO.people)) sel.append(el('option', { value: k }, p.name));
+  sel.addEventListener('change', () => g.filter({ resp: sel.value }));
+  $('#f-q').addEventListener('input', (e) => g.filter({ q: e.target.value }));
+  for (const b of document.querySelectorAll('button[data-status]')) b.addEventListener('click', () => b.setAttribute('aria-pressed', String(g.toggleStatus(b.dataset.status))));
+  const setZoom = (z) => { g.zoom(z); for (const b of document.querySelectorAll('button[data-zoom]')) b.setAttribute('aria-pressed', String(b.dataset.zoom === z)); };
+  for (const b of document.querySelectorAll('button[data-zoom]')) b.addEventListener('click', () => setZoom(b.dataset.zoom));
+  const tog = (k) => { const v = g.toggle(k); $(`button[data-toggle="${k}"]`).setAttribute('aria-pressed', String(v)); };
+  for (const b of document.querySelectorAll('button[data-toggle]')) b.addEventListener('click', () => tog(b.dataset.toggle));
+  $('[data-today]').addEventListener('click', () => g.today());
+  const pb = $('#panel-btn');
+  pb.addEventListener('click', () => { split.classList.toggle('no-panel'); pb.setAttribute('aria-pressed', String(!split.classList.contains('no-panel'))); });
+  // Panel redimensionable (ratón y teclado)
+  const gut = $('#gutter');
+  const setW = (w) => { w = Math.max(300, Math.min(560, Math.round(w))); document.documentElement.style.setProperty('--panel-w', `${w}px`); gut.setAttribute('aria-valuenow', String(w)); };
+  gut.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    const move = (ev) => setW(split.getBoundingClientRect().right - ev.clientX);
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  });
+  gut.addEventListener('keydown', (e) => { const cur = Number(gut.getAttribute('aria-valuenow')); if (e.key === 'ArrowLeft') setW(cur + 20); if (e.key === 'ArrowRight') setW(cur - 20); });
+  document.addEventListener('keydown', (e) => {
+    if (e.target.closest('input, select, textarea, dialog, [role="separator"]') || e.ctrlKey || e.metaKey || e.altKey) return;
+    const map = { 1: () => setZoom('dia'), 2: () => setZoom('semana'), 3: () => setZoom('mes'), c: () => tog('critical'), b: () => tog('baseline'), t: () => g.today() };
+    map[e.key]?.();
+  });
+  g.select(new URLSearchParams(location.search).get('task') ?? '2.1', false);
+}
+</script>
+</body>
+</html>

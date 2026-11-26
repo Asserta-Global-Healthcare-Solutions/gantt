@@ -1,0 +1,72 @@
+{
+  "group": "wbs",
+  "kind": "schedule",
+  "description": "Rollup de grupos: fechas = envolvente de las hojas descendientes (hitos incluidos); progreso sobre hojas descendientes directas (sin promediar subgrupos), hitos excluidos del peso; peso = esfuerzo estimado si todas las tareas lo tienen > 0, si no duración laboral; solo hitos → completados/total. Redondeo half-up a entero.",
+  "defaults": {
+    "project": { "startDate": "2026-11-30", "timezone": "Europe/Madrid" },
+    "calendar": { "weekdayMinutes": [480, 480, 480, 480, 480, 0, 0], "exceptions": [] },
+    "today": "2026-11-30"
+  },
+  "cases": [
+    {
+      "id": "WBS-01", "title": "Progreso ponderado por esfuerzo estimado", "refs": ["PRD §7", "CH-05"],
+      "rationale": "A est 600 p50, B est 1200 p25: (600·50 + 1200·25)/1800 = 60000/1800 = 33,3 → 33. Fechas: A 0–2, B FS 2–5 → G 0–5 (11-30 … 12-04).",
+      "input": { "tasks": [{ "id": "G", "kind": "group" }, { "id": "A", "kind": "task", "parentId": "G", "durationDays": 2, "estimatedEffortMinutes": 600, "progress": 50 },
+          { "id": "B", "kind": "task", "parentId": "G", "durationDays": 3, "estimatedEffortMinutes": 1200, "progress": 25 }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "FS", "lagDays": 0 }] },
+      "expected": { "outcome": "ok", "tasks": { "G": { "class": "GROUP", "startIdx": 0, "finishIdx": 5, "start": "2026-11-30", "finish": "2026-12-04", "progress": 33 } } },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
+    },
+    {
+      "id": "WBS-02", "title": "Sin estimación completa: peso por duración laboral (sin mezclar pesos)", "refs": ["PRD §7"],
+      "rationale": "B sin estimación → se usa duración para todas: (2·50 + 3·0)/5 = 20.",
+      "input": { "tasks": [{ "id": "G", "kind": "group" }, { "id": "A", "kind": "task", "parentId": "G", "durationDays": 2, "estimatedEffortMinutes": 600, "progress": 50 },
+          { "id": "B", "kind": "task", "parentId": "G", "durationDays": 3, "progress": 0 }] },
+      "expected": { "outcome": "ok", "tasks": { "G": { "progress": 20 } } },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
+    },
+    {
+      "id": "WBS-03", "title": "Grupo solo con hitos: completados/total", "refs": ["PRD §7"],
+      "rationale": "M1 completado 12-01 (s=f=B(12-01)=1), M2 auto notBefore 12-03 (3). Progreso 1/2 = 50. Fechas G 1–3, mostradas 12-01 … 12-03.",
+      "input": { "today": "2026-12-01", "tasks": [{ "id": "G", "kind": "group" },
+          { "id": "M1", "kind": "milestone", "parentId": "G", "status": "completada", "actualStart": "2026-12-01", "actualFinish": "2026-12-01" },
+          { "id": "M2", "kind": "milestone", "parentId": "G", "notBefore": "2026-12-03" }] },
+      "expected": { "outcome": "ok", "tasks": { "M1": { "class": "FACT_DONE", "startIdx": 1 }, "G": { "startIdx": 1, "finishIdx": 3, "start": "2026-12-01", "finish": "2026-12-03", "progress": 50 } } },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
+    },
+    {
+      "id": "WBS-04", "title": "Grupos anidados: se pondera sobre hojas, no se promedian subgrupos", "refs": ["PRD §7"],
+      "rationale": "G2 = (480·60 + 480·20)/960 = 40. G1 = (480·60 + 480·20 + 480·50)/1440 = 62400/1440 = 43,3 → 43 (promediar G2=40 y C=50 daría 45, incorrecto). Fechas: A 0–2, B FS 2–4, C 0–4.",
+      "input": { "tasks": [{ "id": "G1", "kind": "group" }, { "id": "G2", "kind": "group", "parentId": "G1" },
+          { "id": "A", "kind": "task", "parentId": "G2", "durationDays": 2, "estimatedEffortMinutes": 480, "progress": 60 },
+          { "id": "B", "kind": "task", "parentId": "G2", "durationDays": 2, "estimatedEffortMinutes": 480, "progress": 20 },
+          { "id": "C", "kind": "task", "parentId": "G1", "durationDays": 4, "estimatedEffortMinutes": 480, "progress": 50 }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "B", "type": "FS", "lagDays": 0 }] },
+      "expected": { "outcome": "ok", "tasks": { "G2": { "startIdx": 0, "finishIdx": 4, "progress": 40 }, "G1": { "startIdx": 0, "finishIdx": 4, "progress": 43 } } },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
+    },
+    {
+      "id": "WBS-05", "title": "Hito excluido del progreso pero incluido en las fechas", "refs": ["PRD §7", "P-14"],
+      "rationale": "A p50 → progreso 50 (M no pesa). Fin mostrado = máx(fin A 12-01, hito M 12-02) = 12-02, aunque finishIdx = 2 coincide con A (frontera).",
+      "input": { "tasks": [{ "id": "G", "kind": "group" }, { "id": "A", "kind": "task", "parentId": "G", "durationDays": 2, "estimatedEffortMinutes": 600, "progress": 50 }, { "id": "M", "kind": "milestone", "parentId": "G" }],
+        "dependencies": [{ "id": "d1", "predecessorId": "A", "successorId": "M", "type": "FS", "lagDays": 0 }] },
+      "expected": { "outcome": "ok", "tasks": { "G": { "startIdx": 0, "finishIdx": 2, "finish": "2026-12-02", "progress": 50 } } },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
+    },
+    {
+      "id": "WBS-06", "title": "Redondeo half-up del progreso", "refs": ["PRD §7"],
+      "rationale": "Pesos iguales, progresos 0 y 1 → 0,5 → 1.",
+      "input": { "tasks": [{ "id": "G", "kind": "group" }, { "id": "A", "kind": "task", "parentId": "G", "durationDays": 1, "estimatedEffortMinutes": 1, "progress": 0 },
+          { "id": "B", "kind": "task", "parentId": "G", "durationDays": 1, "estimatedEffortMinutes": 1, "progress": 1 }] },
+      "expected": { "outcome": "ok", "tasks": { "G": { "progress": 1 } } },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
+    },
+    {
+      "id": "WBS-07", "title": "Grupo vacío", "refs": ["RF-04"],
+      "rationale": "Sin hojas descendientes: fechas y progreso nulos (no 0 ficticio).",
+      "input": { "tasks": [{ "id": "G", "kind": "group" }] },
+      "expected": { "outcome": "ok", "tasks": { "G": { "startIdx": null, "finishIdx": null, "progress": null } } },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "group": "cal",
+  "kind": "schedule",
+  "description": "Efecto del calendario sobre el plan: festivos, sábado laborable, semana de cuatro días, bisiesto, horizonte, inicio no laborable y avisos dependientes de «hoy».",
+  "defaults": {
+    "project": { "startDate": "2026-11-30", "timezone": "Europe/Madrid" },
+    "calendar": { "weekdayMinutes": [480, 480, 480, 480, 480, 0, 0], "exceptions": [] },
+    "today": "2026-11-30"
+  },
+  "cases": [
+    {
+      "id": "CAL-02", "title": "Festivo intermedio alarga el fin civil", "refs": ["RF-09"],
+      "rationale": "Festivo M 12-08. A d7: L30, M1, X2, J3, V4, L7, X9 → último día 12-09 (sin festivo sería 12-08).",
+      "input": { "calendar": { "weekdayMinutes": [480, 480, 480, 480, 480, 0, 0], "exceptions": [{ "date": "2026-12-08", "minutes": 0 }] }, "tasks": [{ "id": "A", "kind": "task", "durationDays": 7 }] },
+      "expected": { "outcome": "ok", "tasks": { "A": { "startIdx": 0, "finishIdx": 7, "start": "2026-11-30", "finish": "2026-12-09" } } },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
+    },
+    {
+      "id": "CAL-03", "title": "Sábado laborable por excepción", "refs": ["RF-09"],
+      "rationale": "Excepción S 12-05 = 240 min (>0 ⇒ laborable). A d6: L30…V4 (5 días) + S5 → último día 12-05.",
+      "input": { "calendar": { "weekdayMinutes": [480, 480, 480, 480, 480, 0, 0], "exceptions": [{ "date": "2026-12-05", "minutes": 240 }] }, "tasks": [{ "id": "A", "kind": "task", "durationDays": 6 }] },
+      "expected": { "outcome": "ok", "tasks": { "A": { "finishIdx": 6, "finish": "2026-12-05" } } },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
+    },
+    {
+      "id": "CAL-04", "title": "Semana de cuatro días (viernes con 0 minutos)", "refs": ["04 §1"],
+      "rationale": "Laborables L-J. A d5: L30, M1, X2, J3, L7 → último día 12-07.",
+      "input": { "calendar": { "weekdayMinutes": [480, 480, 480, 480, 0, 0, 0], "exceptions": [] }, "tasks": [{ "id": "A", "kind": "task", "durationDays": 5 }] },
+      "expected": { "outcome": "ok", "tasks": { "A": { "finishIdx": 5, "finish": "2026-12-07" } } },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
+    },
+    {
+      "id": "CAL-05", "title": "Año bisiesto 2028", "refs": ["RF-09"],
+      "rationale": "Inicio L 2028-02-28. A d3: L 02-28, M 02-29, X 03-01.",
+      "input": { "project": { "startDate": "2028-02-28", "timezone": "Europe/Madrid" }, "today": "2028-02-28", "tasks": [{ "id": "A", "kind": "task", "durationDays": 3 }] },
+      "expected": { "outcome": "ok", "tasks": { "A": { "start": "2028-02-28", "finish": "2028-03-01" } } },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
+    },
+    {
+      "id": "CAL-07a", "title": "Horizonte de 10 años superado", "refs": ["04 §1"],
+      "rationale": "10 años L-V ≈ 2.609 días laborables. d=2.700 ≈ 10,35 años → HORIZON_EXCEEDED.",
+      "input": { "tasks": [{ "id": "A", "kind": "task", "durationDays": 2700 }] },
+      "expected": { "outcome": "error", "errors": ["HORIZON_EXCEEDED"] },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
+    },
+    {
+      "id": "CAL-07b", "title": "Dentro del horizonte", "refs": ["04 §1"],
+      "rationale": "d=2.500 ≈ 9,6 años → válido.",
+      "input": { "tasks": [{ "id": "A", "kind": "task", "durationDays": 2500 }] },
+      "expected": { "outcome": "ok" },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
+    },
+    {
+      "id": "CAL-08", "title": "Proyecto que empieza en día no laborable se rechaza", "refs": ["E-18"],
+      "rationale": "2026-11-28 es sábado.",
+      "input": { "project": { "startDate": "2026-11-28", "timezone": "Europe/Madrid" }, "tasks": [{ "id": "A", "kind": "task", "durationDays": 1 }] },
+      "expected": { "outcome": "error", "errors": ["PROJECT_START_NON_WORKING"] },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
+    },
+    {
+      "id": "CAL-10", "title": "Inicio vencido y plazo superado no mueven fechas, solo avisan", "refs": ["CH-02 §2.4", "PRD §7"],
+      "rationale": "Hoy 12-02. A d2 no iniciada empieza 11-30 < hoy → START_OVERDUE; fin 12-01 > plazo 11-30 → DEADLINE_EXCEEDED. B manual 12-03 no está vencida. Las fechas no cambian.",
+      "input": { "today": "2026-12-02", "tasks": [{ "id": "A", "kind": "task", "durationDays": 2, "deadline": "2026-11-30" }, { "id": "B", "kind": "task", "durationDays": 1, "scheduleMode": "manual", "fixedStart": "2026-12-03" }] },
+      "expected": { "outcome": "ok", "tasks": { "A": { "startIdx": 0, "finishIdx": 2 } },
+        "warnings": [{ "code": "DEADLINE_EXCEEDED", "taskId": "A" }, { "code": "START_OVERDUE", "taskId": "A" }] },
+      "computedBy": "agente (a mano)", "reviewedBy": "responsable técnico (aprobación de AP-004, 2026-11-25)"
+    }
+  ]
+}

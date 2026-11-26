@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inicio — Dirección A</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../shared/base.css">
+<link rel="stylesheet" href="a.css">
+</head>
+<body>
+<nav class="rail" aria-label="Navegación principal">
+  <a class="mark" href="../index.html" title="Asserta Projects (identidad provisional)">A</a>
+  <a href="inicio.html" title="Inicio" aria-label="Inicio" aria-current="page"><span class="i i-house" aria-hidden="true"></span></a>
+  <a href="gantt.html" title="Proyectos" aria-label="Proyectos"><span class="i i-folder-kanban" aria-hidden="true"></span></a>
+  <a href="#" title="Cartera (AP-002b)" aria-label="Cartera (pendiente de AP-002b)" aria-disabled="true"><span class="i i-layers" aria-hidden="true"></span></a>
+  <a href="#" title="Recursos (AP-002b)" aria-label="Recursos (pendiente de AP-002b)" aria-disabled="true"><span class="i i-users" aria-hidden="true"></span></a>
+  <a href="#" title="Horas (AP-002b)" aria-label="Horas (pendiente de AP-002b)" aria-disabled="true"><span class="i i-clock" aria-hidden="true"></span></a>
+  <span class="sp"></span>
+  <a href="#notif" title="Notificaciones" aria-label="Notificaciones, 2 sin leer"><span class="i i-bell" aria-hidden="true"></span><span class="badge"></span></a>
+  <button type="button" data-theme-toggle aria-label="Modo oscuro"><span class="i i-moon" aria-hidden="true"></span></button>
+  <span class="av av-sm" title="Lucía Ferrer" role="img" aria-label="Lucía Ferrer">LF</span>
+</nav>
+<main style="grid-template-rows: auto 1fr">
+  <header class="top">
+    <nav class="crumbs" aria-label="Ruta"><b>Inicio</b></nav>
+    <span class="sp"></span>
+    <button class="btn cmdk" type="button"><span><span class="i i-search" aria-hidden="true"></span>Buscar o ejecutar…</span><span class="kbd">Ctrl K</span></button>
+    <span class="proto-flag">PROTOTIPO · DATOS FICTICIOS</span>
+  </header>
+  <div class="home" id="home"></div>
+</main>
+<script type="module">
+import { DEMO } from '../shared/demo.js';
+import { inicioData } from '../shared/inicio-data.js';
+import { initTheme, stateFromQuery, stateBlock, el, icon, avatar, fmtShort, fmtStamp, isoWeek, toEpochDay, signed, STATUS } from '../shared/util.js';
+
+initTheme('ap002a-a-theme', 'dark');
+const home = document.querySelector('#home');
+const estado = stateFromQuery();
+if (estado) home.replaceChildren(stateBlock(estado));
+else {
+  const D = inicioData(DEMO), P = DEMO.people;
+  let rel = 'todas';
+  const read = (k, v, u, alert) => el('div', { class: `read${alert ? ' alert' : ''}` }, el('dt', {}, k), el('dd', {}, String(v).padStart(2, '0'), u ? el('small', {}, u) : null));
+  const stIcon = (t) => t.milestone ? icon('diamond') : t.status === 'en_curso' ? icon('circle-dot') : icon('circle-dashed');
+  const trow = (t) => {
+    const href = t.project === DEMO.project.code ? `gantt.html?task=${t.id}` : null;
+    return el(href ? 'a' : 'div', { class: `trow st-${t.status}`, href },
+      el('span', { title: STATUS[t.status] }, stIcon(t)),
+      el('span', { class: 'g-code' }, t.code),
+      el('span', { class: 'nm' }, t.name, t.conflict ? el('span', { class: 'tag tag-conf', title: 'Conflicto' }, icon('triangle-alert', 'Conflicto')) : null),
+      el('span', { class: 'rel' }, t.relation === 'responsable' ? 'Resp.' : 'Colab.'),
+      el('time', { class: t.finish < DEMO.today ? 'over' : '', datetime: t.finish }, fmtShort(t.finish)),
+      t.milestone ? el('span', { class: 'num dim' }, t.critical ? 'crítico' : 'hito') : el('span', { class: 'meter' }, el('i', { style: `--v:${t.progress}%` }), el('span', { class: 'num' }, `${t.progress}%`)));
+  };
+  const groupsEl = el('div', { class: 'tlist' });
+  const drawTasks = () => {
+    const G = [['vencidas', 'Vencidas'], ['semana', 'Esta semana'], ['proximas', 'Próximas dos semanas'], ['despues', 'Más adelante']];
+    groupsEl.replaceChildren(...G.flatMap(([k, label]) => {
+      const list = D.groups[k].filter((t) => rel === 'todas' || t.relation === rel);
+      return list.length ? [el('p', { class: `tgroup${k === 'vencidas' ? ' alert' : ''}` }, label, el('span', { class: 'num' }, String(list.length))), ...list.map(trow)] : [];
+    }));
+  };
+  const relChips = el('div', { class: 'chips', role: 'group', 'aria-label': 'Relación' }, ...[['todas', 'Todas'], ['responsable', 'Soy responsable'], ['colaborador', 'Colaboro']].map(([k, l]) =>
+    el('button', { class: 'chip', type: 'button', 'aria-pressed': String(k === rel), onclick: (e) => { rel = k; for (const c of e.target.parentNode.children) c.setAttribute('aria-pressed', String(c === e.target)); drawTasks(); } }, l)));
+  drawTasks();
+
+  // Mini gráfica de hitos (SVG a mano): hoy → +8 semanas
+  const t0 = toEpochDay(DEMO.today) - 7, span = 63, W = 360, H = 64, x = (iso) => 8 + ((toEpochDay(iso) - t0) / span) * (W - 16);
+  const s = (tag, a) => { const n = document.createElementNS('http://www.w3.org/2000/svg', tag); for (const [k, v] of Object.entries(a)) n.setAttribute(k, v); return n; };
+  const chart = s('svg', { viewBox: `0 0 ${W} ${H}`, class: 'mschart', role: 'img', 'aria-label': 'Próximos hitos en las próximas ocho semanas' });
+  chart.append(s('line', { x1: 8, x2: W - 8, y1: 40, y2: 40, class: 'ax' }));
+  for (let d = 0; d <= span; d++) {
+    const iso = new Date((t0 + d) * 86400000).toISOString().slice(0, 10);
+    if (new Date(iso).getUTCDay() === 1) { chart.append(s('line', { x1: x(iso), x2: x(iso), y1: 36, y2: 44, class: 'tk' })); const tx = s('text', { x: x(iso) + 2, y: 58 }); tx.textContent = `S${isoWeek(iso)}`; chart.append(tx); }
+  }
+  chart.append(s('line', { x1: x(DEMO.today), x2: x(DEMO.today), y1: 6, y2: 46, class: 'now' }));
+  D.milestones.filter((m) => toEpochDay(m.date) <= t0 + span).forEach((m, i) => chart.append(s('rect', { x: x(m.date) - 4, y: 36 - 4 - (i % 3) * 9, width: 8, height: 8, transform: `rotate(45 ${x(m.date)} ${36 - (i % 3) * 9})`, class: `dm${m.critical ? ' crit' : ''}${m.overdue ? ' over' : ''}` })));
+
+  home.replaceChildren(
+    el('div', { class: 'home-head' }, el('div', {}, el('h1', {}, 'Mi trabajo'), el('p', {}, `${new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(DEMO.today))} · semana ${isoWeek(DEMO.today)}`))),
+    el('dl', { class: 'reads big', 'aria-label': 'Resumen' }, read('Abiertas', D.counts.open, 'tareas'), read('Vencidas', D.counts.overdue, '', D.counts.overdue > 0), read('Conflictos', D.counts.conflicts, '', D.counts.conflicts > 0), read('Hitos', D.counts.milestones14, 'en 14 d'), read('Sin leer', D.counts.unread, '')),
+    el('div', { class: 'cols' },
+      el('section', { class: 'blk', 'aria-labelledby': 'h-tareas' }, el('div', { class: 'blk-h' }, el('h2', { id: 'h-tareas' }, 'Mis tareas'), relChips), groupsEl),
+      el('div', { class: 'side' },
+        el('section', { class: 'blk', 'aria-labelledby': 'h-conf' }, el('div', { class: 'blk-h' }, el('h2', { id: 'h-conf' }, 'Conflictos que te afectan')),
+          el('ul', { class: 'clist' }, ...D.conflicts.map((c) => el('li', {}, icon('triangle-alert'), el('div', {},
+            el('a', { href: `gantt.html?task=${c.successorId}`, class: 'nm' }, el('span', { class: 'g-code' }, c.successorId), ` ${c.name}`),
+            el('p', {}, `Empieza ${c.deficitDays} d laborables antes de lo que exige ${c.type} desde ${c.pred} ${c.predName}. Reconocido; fecha manual mantenida.`)))))),
+        el('section', { class: 'blk', 'aria-labelledby': 'h-hitos' }, el('div', { class: 'blk-h' }, el('h2', { id: 'h-hitos' }, 'Próximos hitos')), chart,
+          el('ul', { class: 'mslist' }, ...D.milestones.slice(0, 6).map((m) => el('li', {}, el('time', { class: m.overdue ? 'over num' : 'num', datetime: m.date }, fmtShort(m.date)), el('span', { class: 'g-code' }, m.project), el('span', {}, m.name, m.overdue ? ' · vencido' : m.critical ? ' · crítico' : ''))))),
+        el('section', { class: 'blk', id: 'notif', 'aria-labelledby': 'h-not' }, el('div', { class: 'blk-h' }, el('h2', { id: 'h-not' }, 'Notificaciones')),
+          el('ul', { class: 'nlist' }, ...DEMO.notifications.map((n) => el('li', { class: n.unread ? 'unread' : '' },
+            n.actor ? avatar(P, n.actor, 'av-sm') : el('span', { class: 'av av-sm' }, icon('calendar-clock')),
+            el('div', {}, el('p', {}, el('b', { class: 'who' }, n.actor ? P[n.actor].name : 'Recordatorio'), ` ${n.text}`), n.quote ? el('p', { class: 'q' }, `«${n.quote}»`) : null, el('p', { class: 'num dim' }, fmtStamp(n.at))))))))),
+    el('section', { class: 'blk', 'aria-labelledby': 'h-proy' }, el('div', { class: 'blk-h' }, el('h2', { id: 'h-proy' }, 'Proyectos recientes')),
+      el('table', { class: 'ptable' }, el('thead', {}, el('tr', {}, ...['Código', 'Proyecto', 'Salud', 'Progreso', 'Próximo hito', 'Propietaria'].map((h) => el('th', { scope: 'col' }, h)))),
+        el('tbody', {}, ...D.projects.map((p) => el('tr', {},
+          el('td', { class: 'g-code' }, p.code),
+          el('td', { class: 'nm' }, p.gantt ? el('a', { href: 'gantt.html' }, p.name) : p.name, p.restricted ? el('span', { title: 'Proyecto restringido' }, ' ', icon('lock', 'Restringido')) : null),
+          el('td', {}, el('span', { class: `health ${p.health}` }, p.reason)),
+          el('td', {}, el('span', { class: 'meter', style: 'width:120px' }, el('i', { style: `--v:${p.progress}%` }), el('span', { class: 'num' }, `${p.progress}%`))),
+          el('td', {}, el('time', { class: `num${p.next.date < DEMO.today ? ' over' : ''}`, datetime: p.next.date }, fmtShort(p.next.date)), ` ${p.next.name}`),
+          el('td', {}, el('span', { class: 'p-person' }, avatar(P, p.owner, 'av-xs'), P[p.owner].name))))))));
+}
+</script>
+</body>
+</html>

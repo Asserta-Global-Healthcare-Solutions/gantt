@@ -48,9 +48,9 @@ Ninguna de estas decisiones está aprobada. Los «responsables propuestos» son 
 
 | P | Decisión | Propuesta técnica | Bloquea |
 |---|---|---|---|
-| P-14 | Convención visual del hito en frontera (lunes frente a fin del viernes) | Mostrar las dos variantes en el prototipo AP-002a y decidir con Producto | AP-002b, AP-022 |
+| ~~P-14~~ | **Resuelta 2026-11-25:** convención A (el hito en frontera se muestra en el día laborable siguiente, p. ej. lunes). Producto puede revisarla en AP-002b | — | — |
 | P-17 | Prioridad de RF-33 / AP-056 | P1, con la pestaña de tarea en P0 si se quiere en el piloto | Backlog |
 | P-19 | Render PDF/PNG local (navegador headless aislado) | Evaluar en ADR-009 | AP-045 |
-| P-24 | Semántica del trabajo restante (`remainingDurationDays` + `remainingAsOf`) | Aprobar con el contrato AP-004 | AP-004 |
+| ~~P-24~~ | **Resuelta 2026-11-25:** aceptada (`remainingDurationDays` + `remainingAsOf`) | — | — |
 | P-25 | Recursos gráficos corporativos de Asserta (logo, color, tipografía). **Los entrega Comunicación/Marketing**, no ingeniería | Identidad provisional en tokens hasta recibirlos | AP-002b (final) |
 | ~~P-26~~ | **Resuelta 2026-11-25:** commits locales autorizados en las ramas de ticket; push y merge siguen sin autorizar | — | — |
