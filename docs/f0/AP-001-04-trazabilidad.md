@@ -29,7 +29,7 @@ La matriz conecta cada hallazgo de la auditoría inicial (H) con su decisión (D
 |---|---|---|---|---|---|---|---|---|
 | H-M1 | `requestedStart` / `notBefore` redundantes | D-19 | E-11 | CH-02, CH-07 | RF-10 | AP-019 | Fixtures | Propuesto |
 | H-M2 | Dependencias sobre grupos en la importación | D-19 | — | CH-02 | RF-23 | AP-042 | AT-10 | Propuesto |
-| H-M3 | Convención visual de hitos | P-14 | — | CH-12 | RF-06 | AP-002a, AP-022 | Revisión UX | Pendiente |
+| H-M3 | Convención visual de hitos | P-14 (resuelta 2026-11-25: convención A) | — | CH-12 | RF-06 | AP-002a, AP-022 | Revisión UX | Decidido |
 | H-M4 | Holgura libre | D-19 | — | CH-02 | RF-15 | AP-027 | Fixtures | Propuesto (P2) |
 | H-M5 | 403 frente a 404 | D-19 | E-13 | CH-08 | RF-13 | AP-011a | AT-15 | Propuesto |
 | H-M6 | Unicidad de `external_issue` | D-19 | E-12 | CH-11 | RF-29 | AP-048 | Integración DB | Propuesto |
@@ -45,6 +45,7 @@ La matriz conecta cada hallazgo de la auditoría inicial (H) con su decisión (D
 | H-M16 | SSE sobre la infraestructura real | P-08 | — | CH-10 | RNF-06 | AP-029 | AT-06 | Pendiente (IT) |
 | H-M17 | Historial visible para el usuario | D-20, P-17 | E-17 | CH-09 | RF-33 (nuevo), RF-14 | AP-056 (nuevo) | AT-20 (nuevo) | Decidido (P-17 prioridad) |
 | H-M18 | Estrategia de `sortKey` | D-19 | E-22 | CH-07 | RF-04 | AP-014 | Integración DB | Propuesto |
+| DD-C09 | Preferencias de interfaz por usuario en servidor | P-29 (aprobada 2026-11-26) | — | CH-16, CH-07 | RF-34 (nuevo) | AP-015b (subtarea) | AT-24 (nuevo) | Decidido (aprobado) |
 | H-B1 | Sponsor y responsable funcional | P-01, P-02 | E-27 | — | — | AP-001 | — | Pendiente (Dirección) |
 | H-B2 | BOM en el CSV | — | E-25 | — | — | — | — | Mantener |
 | H-B3 | Trazabilidad de AP-001 | D-19 | E-23 | CH-13 | — | AP-001 | — | Propuesto |
@@ -66,6 +67,7 @@ La matriz conecta cada hallazgo de la auditoría inicial (H) con su decisión (D
 | RF-20 | Recurso 1:1 automático para quien registra horas | CH-06 |
 | RF-29 | Audiencia compatible declarada, o solo enlace | CH-11 |
 | **RF-33** | **Nuevo:** historial por tarea y por proyecto con permisos | CH-09 |
+| **RF-34** | **Nuevo (P1, aprobado 2026-11-26):** preferencias de interfaz por usuario en servidor y sincronización entre dispositivos | CH-16 |
 | RNF-10 | Suite del motor ejecutada en Node y en navegador | CH-10, CH-15 |
 
 ## 4. Mapa de ADR
@@ -80,5 +82,5 @@ La matriz conecta cada hallazgo de la auditoría inicial (H) con su decisión (D
 | ADR-006 Teams | P-22 | AP-047 |
 | ADR-007 Jira | D-17, CH-11, P-21 | AP-048, AP-049 |
 | ADR-008 Datos, privacidad y ENS | P-05, P-06, P-07, CH-14 | AP-005, AP-057, AP-058 |
-| ADR-009 UX y exportación | D-10, D-22, P-14, P-19 | AP-002b, AP-045 |
+| ADR-009 UX y exportación | D-10, D-22, P-14 (resuelta), P-19, P-29 (aprobada), CH-16, C · Asserta oficial | AP-002b, AP-015b, AP-045 |
 | ADR-010 Rendimiento y operación | H-M16, P-08 | AP-029, AP-052 |

@@ -53,7 +53,7 @@ Ninguna de estas decisiones está aprobada. Los «responsables propuestos» son 
 | P-19 | Render PDF/PNG local (navegador headless aislado) | Evaluar en ADR-009 | AP-045 |
 | ~~P-24~~ | **Resuelta 2026-11-25:** aceptada (`remainingDurationDays` + `remainingAsOf`) | — | — |
 | P-25 | Recursos gráficos corporativos de Asserta (logo, color, tipografía). **Los entrega Comunicación/Marketing**, no ingeniería | Identidad provisional en tokens hasta recibirlos | AP-002b (final) |
-| P-29 | Preferencias de interfaz **por usuario en el servidor** (DD-C09): nuevo RF-34 y subtarea en AP-015, o solo en el navegador | En el servidor (impacto pequeño) | AP-015 |
+| ~~P-29~~ | **Resuelta 2026-11-26:** aprobada **RF-34** (preferencias de interfaz por usuario en servidor con sincronización entre dispositivos: `user_preference`, `GET/PUT /api/v1/me/preferences`, subtarea `AP-015b`, [CH-16](AP-001-03-propuesta-v1.1.md#ch-16)) | — | — |
 | P-30 | Verificación del prototipo y del producto en Safari y Firefox (versiones aprobadas por IT) | Antes del gate F0 sobre el prototipo C; en AP-052 sobre el producto | Gate F0 (visual), AP-052 |
 | P-31 | Prueba con lector de pantalla real (NVDA y VoiceOver) del Gantt y del Inicio de C | Antes de cerrar AP-002b; en AP-052 sobre el producto | AP-002b, AP-052 |
 | P-32 | Inactividad de sesión de 30 min y máximo de 8 h; revalidación de identidad cada 15 min (AP-005 02 §4–5) | Aprobar | Seguridad + IT | AP-009 |
