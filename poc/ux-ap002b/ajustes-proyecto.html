@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>14 · Configuración de proyectos — Asserta Projects</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../ux-ap002a/shared/base.css">
+<link rel="stylesheet" href="../ux-ap002a/c/c.css">
+<link rel="stylesheet" href="shared/ap002b.css">
+</head>
+<body>
+<nav id="nav"></nav>
+<main class="page-main">
+  <div id="masthead-slot"></div>
+  <div class="page-scroll" id="content"></div>
+</main>
+<dialog class="impact" id="dlg-cal" aria-labelledby="cal-imp-title"></dialog>
+<script type="module">
+import { el, icon, avatar } from '../ux-ap002a/shared/util.js';
+import { DEMO, PROJECTS, fmtEur } from './shared/data-ext.js';
+import { mountShell, makeMasthead, projectTabs, readItem, extendedStateBlock } from './shared/shell.js';
+
+const q = new URLSearchParams(location.search);
+const projCode = q.get('p') === 'AUDA' ? 'AUDA' : 'PPV2';
+const proj = structuredClone(PROJECTS.find((p) => p.code === projCode) ?? PROJECTS[0]);
+const { role, bindNavToggle, toast, estado } = mountShell({ navKey: 'ajustes-proyecto', projectCode: projCode });
+
+const baselines = [
+  { id: 'bl-1', name: 'Línea base inicial', frozenAt: '2026-10-30', rev: 12, finish: '2027-01-21', active: true },
+  { id: 'bl-2', name: 'Replanificación nov', frozenAt: '2026-11-18', rev: 36, finish: '2027-01-28', active: false },
+];
+const members = [
+  { id: 'LF', projectRole: 'Propietaria', financial: true },
+  { id: 'MP', projectRole: 'Editor del plan', financial: false },
+  { id: 'NE', projectRole: 'Editora del plan', financial: false },
+  { id: 'JO', projectRole: 'Colaborador', financial: false },
+  { id: 'AR', projectRole: 'Colaboradora', financial: false },
+  { id: 'OV', projectRole: 'Colaborador', financial: false },
+];
+const breakGlassReqs = [
+  { id: 'bg-1', requester: 'MP', approver: 'LF', project: 'AUDA', reason: 'Soporte técnico puntual para revisar conector de logs de auditoría', expires: '2026-11-26 14:33 UTC', status: 'aprobado' },
+];
+let calVersion = 'v2';
+
+const { header, navBtn } = makeMasthead({
+  kickerParts: [el('a', { href: 'proyectos.html' }, '02 Proyectos'), el('span', {}, '/'), el('span', {}, proj.code), el('span', {}, '/'), el('span', {}, 'Ajustes')],
+  tabs: projectTabs('ajustes', proj.code),
+  title: `Configuración · ${proj.name}`,
+  dateline: [
+    el('span', {}, `Visibilidad: ${proj.restricted ? 'Restringido (lista explícita)' : 'Estándar'}`),
+    el('span', {}, `Calendario inmutable: Corporativo España L–V · ${calVersion}`),
+    el('span', {}, `Revisión ${proj.revision}`),
+  ],
+  reads: [
+    readItem('Miembros', String(members.length)),
+    readItem('Líneas base', String(baselines.length)),
+    readItem('Visibilidad', proj.restricted ? 'Restringido' : 'Estándar', '', proj.restricted ? 'warn' : ''),
+  ],
+});
+document.querySelector('#masthead-slot').replaceWith(header);
+bindNavToggle(navBtn);
+
+const content = document.querySelector('#content');
+const dlgCal = document.querySelector('#dlg-cal');
+
+if (estado) {
+  content.replaceChildren(extendedStateBlock(estado));
+} else {
+  function previewCalendarChange(nextVer) {
+    if (nextVer === calVersion) return;
+    const confirmBtn = el('button', { type: 'button', class: 'btn btn-primary', onclick: () => {
+      calVersion = nextVer;
+      dlgCal.close();
+      render();
+      toast(`Calendario actualizado a versión inmutable ${nextVer} · plan recalculado`);
+    } }, 'Aplicar versión de calendario');
+
+    dlgCal.replaceChildren(
+      el('header', {},
+        el('p', { class: 'eyebrow' }, `Preview de impacto por cambio de calendario · ${calVersion} → ${nextVer}`),
+        el('h2', { id: 'cal-imp-title' }, `Cambiar a Corporativo España L–V · ${nextVer}`),
+        el('p', { class: 'impact-sum' }, nextVer === 'v3' ? 'Añade festivo local 07 dic 2026 · desplaza fin previsto +1 d laborable' : 'Calendario sin festivo 07 dic · desplaza fin previsto −1 d laborable')
+      ),
+      el('section', {},
+        el('h3', {}, 'Tareas desplazadas estimadas (6)'),
+        el('ul', { class: 'impact-list', tabindex: '0', 'aria-label': 'Tareas afectadas por cambio de calendario' },
+          ...[['3.1.1', 'API de catálogo', '+1 d'], ['3.2.1', 'Maquetación de pantallas', '+1 d'], ['3.2.2', 'Gestión de pedidos', '+1 d'], ['4.1', 'Pruebas integradas', '+1 d'], ['4.2', 'Pruebas de aceptación', '+1 d'], ['5.1', 'Go-live', '+1 d']].map(([c, n, d]) =>
+            el('li', {}, el('span', { class: 'g-code' }, c), el('span', {}, n), el('span', { class: 'num' }, d))
+          )
+        )
+      ),
+      el('p', { class: 'note' }, 'Los calendarios publicados son inmutables (v1/v2/v3). Cambiar la versión asignada al proyecto dispara un recálculo completo en servidor con vista previa obligatoria.'),
+      el('footer', {}, el('button', { type: 'button', class: 'btn', onclick: () => { dlgCal.close(); render(); } }, 'Cancelar'), confirmBtn)
+    );
+    dlgCal.showModal();
+  }
+
+  function render() {
+    const calSelect = el('select', { id: 'cal-ver', onchange: (e) => previewCalendarChange(e.target.value) },
+      el('option', { value: 'v1', selected: calVersion === 'v1' }, 'v1 · Corporativo 2026 (inmutable · congelado)'),
+      el('option', { value: 'v2', selected: calVersion === 'v2' }, 'v2 · Corporativo 2026-2027 (actual · inmutable)'),
+      el('option', { value: 'v3', selected: calVersion === 'v3' }, 'v3 · Corporativo 2026-2027 + puente 07 dic (inmutable)')
+    );
+
+    const bgForm = el('form', { class: 'form-grid', onsubmit: (e) => {
+      e.preventDefault();
+      const reason = e.currentTarget.querySelector('#bg-reason').value.trim();
+      const dur = e.currentTarget.querySelector('#bg-dur').value;
+      if (reason.length < 8) { toast('Indica una justificación operativa (mín. 8 caracteres)'); return; }
+      breakGlassReqs.unshift({
+        id: `bg-${Date.now()}`, requester: role.userId, approver: role.userId === 'LF' ? 'MP (co-propietario distinto)' : 'LF (propietaria distinta)',
+        project: proj.code, reason, expires: `Caduca en ${dur} h desde aprobación`, status: 'pendiente',
+      });
+      render();
+      toast('Solicitud break-glass registrada · requiere aprobador distinto a solicitante');
+    } },
+      el('div', { class: 'form-field' }, el('label', { for: 'bg-dur' }, 'Caducidad máxima'), el('select', { id: 'bg-dur' }, el('option', { value: '4' }, '4 horas (recomendado)'), el('option', { value: '24' }, '24 horas'), el('option', { value: '48' }, '48 horas (máximo)'))),
+      el('div', { class: 'form-field' }, el('label', { for: 'bg-app' }, 'Aprobador requerido (≠ solicitante)'), el('input', { id: 'bg-app', type: 'text', readonly: true, value: role.userId === 'LF' ? 'Marc Puig (co-propietario)' : 'Lucía Ferrer (propietaria)' })),
+      el('div', { class: 'form-field full' }, el('label', { for: 'bg-reason' }, 'Motivo excepcional (registrado en auditoría de seguridad)'), el('input', { id: 'bg-reason', type: 'text', required: true, placeholder: 'Ej. Soporte a incidencia crítica en entorno productivo…' })),
+      el('div', { class: 'form-field full', style: 'display:flex;justify-content:flex-end' }, el('button', { type: 'submit', class: 'btn btn-primary' }, icon('key-round'), 'Solicitar acceso excepcional'))
+    );
+
+    content.replaceChildren(
+      el('div', { class: 'page-stack' },
+        el('div', { class: 'grid-2' },
+          el('section', { class: 'card', 'aria-labelledby': 'h-cal' },
+            el('div', { class: 'card-h' }, el('h2', { id: 'h-cal' }, 'Calendario versionado inmutable'), el('span', { class: 'badge' }, calVersion)),
+            el('div', { class: 'form-field' }, el('label', { for: 'cal-ver' }, 'Versión asignada al proyecto'), calSelect, el('span', { class: 'form-help' }, 'Al seleccionar otra versión se abre automáticamente el preview de impacto en fechas.')),
+            el('div', { class: 'form-field' },
+              el('label', { for: 'proj-vis' }, 'Visibilidad del proyecto'),
+              el('select', { id: 'proj-vis', onchange: (e) => { proj.restricted = e.target.value === 'restricted'; toast(`Visibilidad actualizada a ${proj.restricted ? 'Restringido' : 'Estándar'}`); render(); } },
+                el('option', { value: 'standard', selected: !proj.restricted }, 'Estándar (organización según grants)'),
+                el('option', { value: 'restricted', selected: proj.restricted }, 'Restringido (solo miembros explícitos + break-glass)')
+              )
+            ),
+            el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' },
+              el('a', { class: 'btn', href: 'ajustes-proyecto.html' }, 'Ver PPV2 (estándar)'),
+              el('a', { class: 'btn', href: 'ajustes-proyecto.html?p=AUDA' }, icon('lock'), 'Ver AUDA (restringido)')
+            )
+          ),
+          el('section', { class: 'card', 'aria-labelledby': 'h-bl' },
+            el('div', { class: 'card-h' }, el('h2', { id: 'h-bl' }, 'Líneas base (snapshots inmutables)'), el('button', { type: 'button', class: 'btn btn-primary', onclick: () => {
+              baselines.unshift({ id: `bl-${baselines.length + 1}`, name: `Línea base rev. ${proj.revision}`, frozenAt: '2026-11-25', rev: proj.revision, finish: '2027-02-01', active: false });
+              render();
+              toast(`Snapshot inmutable congelado sobre rev. ${proj.revision}`);
+            } }, icon('plus'), 'Congelar línea base')),
+            el('div', { class: 'tbl-wrap' }, el('table', { class: 'dtable' },
+              el('thead', {}, el('tr', {}, ...['Nombre', 'Congelada', 'Rev.', 'Fin', 'Comparar'].map((h) => el('th', { scope: 'col' }, h)))),
+              el('tbody', {}, ...baselines.map((b) => el('tr', {},
+                el('td', {}, b.name),
+                el('td', { class: 'num' }, b.frozenAt),
+                el('td', { class: 'num' }, `r${b.rev}`),
+                el('td', { class: 'num' }, b.finish),
+                el('td', {}, el('button', { type: 'button', class: `btn ${b.active ? 'btn-primary' : ''}`, style: 'min-height:24px;font-size:11.5px', onclick: () => { for (const x of baselines) x.active = x.id === b.id; render(); toast(`Línea base activa en Gantt: ${b.name}`); } }, b.active ? 'Activa' : 'Comparar'))
+              )))
+            ))
+          )
+        ),
+        el('section', { class: 'card', 'aria-labelledby': 'h-mem' },
+          el('div', { class: 'card-h' }, el('h2', { id: 'h-mem' }, 'Miembros y roles del proyecto'), el('span', { class: 'badge' }, `${members.length} personas`)),
+          el('div', { class: 'tbl-wrap' }, el('table', { class: 'dtable' },
+            el('thead', {}, el('tr', {}, ...['Persona', 'Rol en el proyecto', 'Permiso financial.read'].map((h) => el('th', { scope: 'col' }, h)))),
+            el('tbody', {}, ...members.map((m) => el('tr', {},
+              el('td', {}, el('span', { class: 'p-person' }, avatar(DEMO.people, m.id, 'av-xs'), DEMO.people[m.id]?.name)),
+              el('td', {}, m.projectRole),
+              el('td', {}, m.financial ? el('span', { class: 'badge badge-brand' }, 'Concedido') : el('span', { class: 'badge' }, 'No concedido'))
+            )))
+          ))
+        ),
+        el('div', { class: 'grid-2' },
+          el('section', { class: 'card', id: 'breakglass', 'aria-labelledby': 'h-bg' },
+            el('div', { class: 'card-h' }, el('h2', { id: 'h-bg' }, 'Acceso excepcional (break-glass)'), el('span', { class: 'badge badge-warn' }, icon('key-round'), 'Aprobador distinto + caducidad')),
+            bgForm,
+            el('div', { class: 'tbl-wrap' }, el('table', { class: 'dtable' },
+              el('thead', {}, el('tr', {}, ...['Solicitante', 'Aprobador', 'Caducidad', 'Estado'].map((h) => el('th', { scope: 'col' }, h)))),
+              el('tbody', {}, ...breakGlassReqs.map((r) => el('tr', {},
+                el('td', {}, r.requester),
+                el('td', {}, r.approver),
+                el('td', { class: 'num' }, r.expires),
+                el('td', {}, el('span', { class: `badge ${r.status === 'aprobado' ? 'badge-ok' : 'badge-warn'}` }, r.status))
+              )))
+            ))
+          ),
+          el('section', { class: 'card', 'aria-labelledby': 'h-bud' },
+            el('div', { class: 'card-h' }, el('h2', { id: 'h-bud' }, 'Presupuesto del proyecto'), el('span', { class: 'badge' }, 'EUR')),
+            role.caps.financialRead
+              ? el('div', { style: 'display:grid;gap:12px' },
+                  el('div', { class: 'form-field' }, el('label', { for: 'bud-val' }, 'Presupuesto aprobado (EUR)'), el('input', { id: 'bud-val', type: 'text', value: fmtEur(proj.budgetEur) })),
+                  el('div', { class: 'form-field' }, el('label', { for: 'bud-warn' }, 'Umbral de alerta de desviación (%)'), el('input', { id: 'bud-warn', type: 'number', value: '15', min: 1, max: 100 })),
+                  el('div', { style: 'display:flex;justify-content:space-between;align-items:center' },
+                    el('a', { class: 'btn', href: 'costes.html' }, icon('euro'), 'Ver desglose de costes'),
+                    el('button', { type: 'button', class: 'btn btn-primary', onclick: () => toast('Parámetros presupuestarios guardados (simulado)') }, 'Guardar presupuesto')
+                  )
+                )
+              : el('div', { class: 'banner is-info' }, icon('lock'), el('div', {}, el('strong', {}, 'Sección presupuestaria oculta sin financial.read'), el('p', {}, 'Solo los perfiles con capability financial.read pueden consultar o editar el presupuesto del proyecto.')))
+          )
+        )
+      )
+    );
+  }
+  render();
+}
+</script>
+</body>
+</html>

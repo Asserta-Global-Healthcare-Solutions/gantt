@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>05 · Kanban — PPV2 · Asserta Projects</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../ux-ap002a/shared/base.css">
+<link rel="stylesheet" href="../ux-ap002a/c/c.css">
+<link rel="stylesheet" href="shared/ap002b.css">
+</head>
+<body>
+<nav id="nav"></nav>
+<main class="page-main">
+  <div id="masthead-slot"></div>
+  <div class="toolbar" id="toolbar" role="toolbar" aria-label="Filtros del tablero Kanban"></div>
+  <div class="page-scroll" id="content"></div>
+</main>
+<dialog class="impact" id="dlg-impact" aria-labelledby="k-imp-title"></dialog>
+<script type="module">
+import { el, icon, avatar, fmtShort } from '../ux-ap002a/shared/util.js';
+import { DEMO } from './shared/data-ext.js';
+import { mountShell, makeMasthead, projectTabs, readItem, extendedStateBlock } from './shared/shell.js';
+
+const { role, bindNavToggle, toast, estado } = mountShell({ navKey: 'kanban', projectCode: 'PPV2' });
+const meta = structuredClone(DEMO.meta);
+// Añadimos una tarea bloqueada en copia de demo para que las 4 columnas muestren contenido real o movible;
+// mantenemos consistencia con el plan PPV2 marcando 3.3 en pendiente con conflicto visible y permitiendo mover a Bloqueada.
+const COLS = [
+  { key: 'pendiente', label: 'Pendiente' },
+  { key: 'en_curso', label: 'En curso' },
+  { key: 'bloqueada', label: 'Bloqueada' },
+  { key: 'completada', label: 'Completada' },
+];
+let filterResp = '', revision = DEMO.project.revision;
+
+const { header, navBtn } = makeMasthead({
+  kickerParts: [el('a', { href: 'proyectos.html' }, '02 Proyectos'), el('span', {}, '/'), el('span', {}, 'PPV2')],
+  tabs: projectTabs('kanban', 'PPV2'),
+  title: 'Kanban · Portal de proveedores v2',
+  dateline: [
+    el('span', {}, `Revisión ${revision} · mismo plan que Gantt y Tabla`),
+    el('span', {}, 'Mover sin hecho relevante conserva las fechas intactas · registrar hecho con impacto pide confirmación (CH-03 / P-23)'),
+  ],
+  reads: [
+    readItem('Pendientes', String(Object.values(meta).filter((m) => m.kind !== 'group' && m.status === 'pendiente').length)),
+    readItem('En curso', String(Object.values(meta).filter((m) => m.kind !== 'group' && m.status === 'en_curso').length)),
+    readItem('Completadas', String(Object.values(meta).filter((m) => m.kind !== 'group' && m.status === 'completada').length)),
+  ],
+});
+document.querySelector('#masthead-slot').replaceWith(header);
+bindNavToggle(navBtn);
+
+const toolbar = document.querySelector('#toolbar');
+const content = document.querySelector('#content');
+const dlg = document.querySelector('#dlg-impact');
+
+if (estado) {
+  toolbar.hidden = true;
+  content.replaceChildren(extendedStateBlock(estado));
+} else if (!role.caps.projectRead) {
+  toolbar.hidden = true;
+  content.replaceChildren(extendedStateBlock('sinpermiso', {
+    sinpermisoTitle: 'Admin IT no tiene acceso al tablero Kanban de PPV2',
+    sinpermisoBody: 'platform.admin no concede project.read.',
+    sinpermisoActions: [{ label: 'Ir a Administración', primary: true, href: 'admin.html' }],
+  }));
+} else {
+  const selResp = el('select', { 'aria-label': 'Filtrar por persona', onchange: (e) => { filterResp = e.target.value; render(); } },
+    el('option', { value: '' }, 'Todas las personas'),
+    ...Object.entries(DEMO.people).map(([k, p]) => el('option', { value: k }, p.name))
+  );
+  const fnote = el('span', { class: 'fnote', 'aria-live': 'polite' });
+  toolbar.replaceChildren(
+    el('label', { class: 'field' }, icon('users'), selResp),
+    fnote,
+    el('span', { class: 'sp' }),
+    el('span', { class: 'dim', style: 'font-size:12px' }, 'Operable por teclado (botones Mover) y arrastre')
+  );
+
+  function successorsOf(id) {
+    return DEMO.input.dependencies.filter((d) => d.predecessorId === id).map((d) => ({ id: d.successorId, name: meta[d.successorId].name, type: d.type }));
+  }
+
+  function requestMove(id, toStatus) {
+    const m = meta[id];
+    if (m.status === toStatus) return;
+    const succs = successorsOf(id);
+    const triggersFactImpact = (toStatus === 'en_curso' || toStatus === 'completada') && succs.length > 0;
+
+    if (!triggersFactImpact) {
+      m.status = toStatus;
+      revision += 1;
+      render();
+      toast(`${id} movida a ${COLS.find((c) => c.key === toStatus).label} · fechas del plan intactas (rev. ${revision})`);
+      return;
+    }
+
+    const labelTo = COLS.find((c) => c.key === toStatus).label;
+    const confirmBtn = el('button', { type: 'button', class: 'btn btn-primary', onclick: () => {
+      m.status = toStatus;
+      revision += 1;
+      dlg.close();
+      render();
+      toast(`Hecho registrado en ${id} → ${labelTo} · revisión ${revision} confirmada`);
+    } }, 'Confirmar cambio');
+
+    dlg.replaceChildren(
+      el('header', {},
+        el('p', { class: 'eyebrow' }, `Impacto en sucesoras (CH-03 / P-23) · revisión ${revision} → ${revision + 1}`),
+        el('h2', { id: 'k-imp-title' }, `${id} ${m.name} → ${labelTo}`),
+        el('p', { class: 'impact-sum' }, toStatus === 'completada' ? `Registrar fin real hoy (${fmtShort(DEMO.today)})` : `Registrar inicio real hoy (${fmtShort(DEMO.today)})`)
+      ),
+      el('section', {},
+        el('h3', {}, `Sucesoras evaluadas por el motor (${succs.length})`),
+        el('ul', { class: 'impact-list', tabindex: '0', 'aria-label': 'Sucesoras afectadas' },
+          ...succs.map((s) => el('li', {}, el('span', { class: 'g-code' }, s.id), el('span', {}, s.name), el('span', { class: 'num' }, `${s.type} · recálculo`)))
+        )
+      ),
+      el('p', { class: 'note' }, 'Mover una tarjeta a «En curso» o «Completada» registra un hecho real (actualStart / actualFinish). Si cancelas, ni el estado ni las fechas cambian.'),
+      el('footer', {},
+        el('button', { type: 'button', class: 'btn', onclick: () => dlg.close() }, 'Cancelar'),
+        confirmBtn
+      )
+    );
+    dlg.showModal();
+    confirmBtn.focus();
+  }
+
+  let dragId = null;
+
+  function render() {
+    fnote.textContent = filterResp ? 'Filtro activo · el plan no cambia' : '';
+    const leaves = DEMO.order.filter((id) => {
+      const m = meta[id];
+      if (m.kind === 'group') return false;
+      if (filterResp && m.responsible !== filterResp && !m.collaborators.includes(filterResp)) return false;
+      return true;
+    });
+
+    const board = el('div', { class: 'kanban' }, ...COLS.map((col, colIdx) => {
+      const items = leaves.filter((id) => meta[id].status === col.key);
+      const colEl = el('section', {
+        class: 'k-col', 'data-col': col.key, 'aria-label': `Columna ${col.label} (${items.length})`,
+        ondragover: (e) => { e.preventDefault(); colEl.classList.add('is-over'); },
+        ondragleave: () => colEl.classList.remove('is-over'),
+        ondrop: (e) => { e.preventDefault(); colEl.classList.remove('is-over'); if (dragId) requestMove(dragId, col.key); dragId = null; },
+      },
+        el('div', { class: 'k-col-h' }, el('h2', {}, col.label), el('span', { class: 'badge' }, String(items.length))),
+        ...(items.length ? items.map((id) => {
+          const m = meta[id], t = DEMO.plan.tasks[id];
+          const conf = DEMO.plan.conflicts.some((c) => c.successorId === id);
+          const prevCol = COLS[colIdx - 1], nextCol = COLS[colIdx + 1];
+          return el('article', {
+            class: 'k-card', draggable: 'true',
+            ondragstart: () => { dragId = id; },
+          },
+            el('div', { class: 'k-card-top' },
+              el('span', { class: 'g-code' }, id),
+              el('div', { style: 'display:flex;gap:4px' },
+                t.critical ? el('span', { class: 'badge badge-crit' }, 'Crítica') : null,
+                conf ? el('span', { class: 'tag tag-conf' }, icon('triangle-alert'), 'Conflicto') : null
+              )
+            ),
+            el('a', { class: 'k-card-title', href: `tarea.html?task=${id}` }, m.kind === 'milestone' ? '◇ ' : '', m.name),
+            el('div', { class: 'k-card-meta' },
+              avatar(DEMO.people, m.responsible, 'av-xs'),
+              el('span', {}, `${fmtShort(t.start)} – ${fmtShort(t.finish)}`),
+              el('span', {}, `${t.progress ?? 0}%`)
+            ),
+            el('div', { class: 'k-card-acts' },
+              prevCol ? el('button', { type: 'button', class: 'btn', onclick: () => requestMove(id, prevCol.key), 'aria-label': `Mover ${id} a ${prevCol.label}` }, icon('arrow-left'), prevCol.label) : el('span'),
+              nextCol ? el('button', { type: 'button', class: 'btn', onclick: () => requestMove(id, nextCol.key), 'aria-label': `Mover ${id} a ${nextCol.label}` }, nextCol.label, icon('arrow-right')) : el('span')
+            )
+          );
+        }) : [el('p', { class: 'dim', style: 'font-size:12.5px;padding:12px 0' }, 'Sin tareas en esta columna. Arrastra o usa los botones «Mover» de otra tarjeta.')])
+      );
+      return colEl;
+    }));
+
+    content.replaceChildren(
+      el('div', { class: 'page-stack' },
+        el('div', { class: 'banner is-info' }, icon('info'), el('div', {}, el('strong', {}, 'Regla de consistencia Kanban ↔ Gantt (CH-03)'), el('p', {}, 'Cambiar una tarea a «Bloqueada» o «Pendiente» mantiene intactas las fechas planificadas. Pasarla a «En curso» o «Completada» cuando tiene sucesoras abre el diálogo de impacto antes de confirmar.'))),
+        board
+      )
+    );
+  }
+  render();
+}
+</script>
+</body>
+</html>

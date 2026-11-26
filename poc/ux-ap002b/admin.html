@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>15 · Administración — Asserta Projects</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../ux-ap002a/shared/base.css">
+<link rel="stylesheet" href="../ux-ap002a/c/c.css">
+<link rel="stylesheet" href="shared/ap002b.css">
+</head>
+<body>
+<nav id="nav"></nav>
+<main class="page-main">
+  <div id="masthead-slot"></div>
+  <div class="page-scroll" id="content"></div>
+</main>
+<script type="module">
+import { el, icon, avatar } from '../ux-ap002a/shared/util.js';
+import { PEOPLE_EXT, ADMIN_GRANTS } from './shared/data-ext.js';
+import { mountShell, makeMasthead, readItem, extendedStateBlock } from './shared/shell.js';
+
+const { role, bindNavToggle, toast, estado } = mountShell({ navKey: 'admin' });
+const users = [
+  { id: 'LF', tid: 'tid-asserta-01', oid: 'oid-1a01-99e2', team: 'PMO y Producto', active: true, sessions: 2 },
+  { id: 'MP', tid: 'tid-asserta-01', oid: 'oid-2b71-88a4', team: 'Arquitectura', active: true, sessions: 1 },
+  { id: 'NE', tid: 'tid-asserta-01', oid: 'oid-3c82-77b1', team: 'PMO y Producto', active: true, sessions: 1 },
+  { id: 'JO', tid: 'tid-asserta-01', oid: 'oid-6e04-11d9', team: 'Ingeniería', active: true, sessions: 2 },
+  { id: 'AR', tid: 'tid-asserta-01', oid: 'oid-7d20-33f5', team: 'Calidad', active: true, sessions: 1 },
+  { id: 'OV', tid: 'tid-asserta-01', oid: 'oid-5a11-77c0', team: 'Soporte', active: false, sessions: 0 },
+  { id: 'CN', tid: 'tid-asserta-01', oid: 'oid-9f1a-402c', team: 'Plataforma IT', active: true, sessions: 1 },
+];
+const grants = structuredClone(ADMIN_GRANTS);
+let selfAssignErr = '';
+
+const { header, navBtn } = makeMasthead({
+  kickerParts: [el('span', {}, '10 Administración')],
+  title: 'Administración de plataforma',
+  dateline: [
+    el('span', {}, 'Identidad por tid + oid de Microsoft Entra ID (nunca por email)'),
+    el('span', {}, 'platform.admin NO concede project.read · autoasignación prohibida (ADR-003)'),
+  ],
+  reads: [
+    readItem('Usuarios', String(users.length)),
+    readItem('Sesiones activas', String(users.reduce((s, u) => s + u.sessions, 0))),
+    readItem('Grants activos', String(grants.length)),
+  ],
+});
+document.querySelector('#masthead-slot').replaceWith(header);
+bindNavToggle(navBtn);
+
+const content = document.querySelector('#content');
+
+if (estado) {
+  content.replaceChildren(extendedStateBlock(estado));
+} else if (!role.caps.adminView) {
+  content.replaceChildren(extendedStateBlock('sinpermiso', {
+    sinpermisoTitle: 'Acceso restringido a platform.admin',
+    sinpermisoBody: 'Tu rol actual (Miembro) no tiene permisos administrativos. El servidor devuelve HTTP 403 y registra el intento en la auditoría de seguridad.',
+    sinpermisoActions: [{ label: 'Volver a Inicio', primary: true, href: 'inicio.html' }],
+  }));
+} else {
+  function render() {
+    const grantForm = el('form', { class: 'form-grid', onsubmit: (e) => {
+      e.preventDefault();
+      selfAssignErr = '';
+      const targetUser = e.currentTarget.querySelector('#gr-user').value;
+      const scopeType = e.currentTarget.querySelector('#gr-scope').value;
+      const scopeRef = e.currentTarget.querySelector('#gr-ref').value;
+      const grantRole = e.currentTarget.querySelector('#gr-role').value;
+      if (targetUser === role.userId) {
+        selfAssignErr = `Autoasignación bloqueada (ADR-003): el actor actual (${role.name}) no puede concederse grants a sí mismo. Intento registrado como DENY en auditoría.`;
+        render();
+        return;
+      }
+      grants.unshift({ id: `g-${Date.now()}`, user: targetUser, scopeType, scopeRef, role: grantRole, grantedBy: role.userId, at: '2026-11-25' });
+      render();
+      toast(`Grant con alcance ${scopeType}:${scopeRef} concedido a ${PEOPLE_EXT[targetUser]?.name}`);
+    } },
+      el('div', { class: 'form-field' }, el('label', { for: 'gr-user' }, 'Usuario destinatario'),
+        el('select', { id: 'gr-user' }, ...users.map((u) => el('option', { value: u.id }, `${PEOPLE_EXT[u.id]?.name} (${u.oid})${u.id === role.userId ? ' — tú (bloqueado)' : ''}`)))
+      ),
+      el('div', { class: 'form-field' }, el('label', { for: 'gr-scope' }, 'Alcance (scope)'),
+        el('select', { id: 'gr-scope' }, el('option', { value: 'project' }, 'project (proyecto específico)'), el('option', { value: 'team' }, 'team (equipo)'), el('option', { value: 'org' }, 'org (organización)'))
+      ),
+      el('div', { class: 'form-field' }, el('label', { for: 'gr-ref' }, 'Recurso destino'), el('input', { id: 'gr-ref', type: 'text', value: 'PPV2', required: true })),
+      el('div', { class: 'form-field' }, el('label', { for: 'gr-role' }, 'Capability / Rol'),
+        el('select', { id: 'gr-role' },
+          el('option', {}, 'Colaborador (project.read)'),
+          el('option', {}, 'Editor del plan (project.write)'),
+          el('option', {}, 'Control financiero (financial.read)'),
+          el('option', {}, 'Gestor de recursos (team.capacity.read)')
+        )
+      ),
+      el('div', { class: 'form-field full', style: 'display:flex;justify-content:flex-end' },
+        el('button', { type: 'submit', class: 'btn btn-primary' }, icon('shield'), 'Conceder grant con alcance')
+      )
+    );
+
+    content.replaceChildren(
+      el('div', { class: 'page-stack' },
+        !role.caps.isItAdmin
+          ? el('div', { class: 'banner is-info' }, icon('info'), el('div', {}, el('strong', {}, 'Vista de evaluación de Administración'), el('p', {}, 'En servidor esta vista exige platform.admin. Cambia el selector de rol en el pie izquierdo a «Admin IT» para operar como titular o a «Miembro» para comprobar el bloqueo 403.')))
+          : null,
+        el('div', { class: 'banner is-warn', role: 'note' }, icon('shield-alert'), el('div', {},
+          el('strong', {}, 'Principio de mínimo privilegio (ADR-003)'),
+          el('p', {}, 'platform.admin gestiona usuarios, equipos, calendarios corporativos y grants, pero NO concede project.read ni financial.read. Está prohibida la autoasignación de grants.')
+        )),
+        el('section', { class: 'card', 'aria-labelledby': 'h-usr' },
+          el('div', { class: 'card-h' }, el('h2', { id: 'h-usr' }, 'Usuarios Entra ID (tid + oid) y sesiones'), el('span', { class: 'badge' }, `${users.length} cuentas`)),
+          el('div', { class: 'tbl-wrap' }, el('table', { class: 'dtable' },
+            el('thead', {}, el('tr', {}, ...['Usuario', 'Identificador tid + oid', 'Equipo', 'Estado', 'Sesiones', 'Acciones'].map((h) => el('th', { scope: 'col' }, h)))),
+            el('tbody', {}, ...users.map((u) => el('tr', {},
+              el('td', {}, el('span', { class: 'p-person' }, avatar(PEOPLE_EXT, u.id, 'av-xs'), PEOPLE_EXT[u.id]?.name)),
+              el('td', { class: 'num' }, `${u.tid} / ${u.oid}`),
+              el('td', {}, u.team),
+              el('td', {}, el('span', { class: `badge ${u.active ? 'badge-ok' : 'badge-danger'}` }, u.active ? 'Activo' : 'Deshabilitado')),
+              el('td', { class: 'num-col' }, String(u.sessions)),
+              el('td', {},
+                el('div', { style: 'display:flex;gap:6px;flex-wrap:wrap' },
+                  el('button', { type: 'button', class: 'btn', style: 'min-height:26px;font-size:12px', onclick: () => { u.active = !u.active; if (!u.active) u.sessions = 0; render(); toast(`${PEOPLE_EXT[u.id].name}: estado ${u.active ? 'activo' : 'deshabilitado'}`); } }, u.active ? 'Deshabilitar' : 'Reactivar'),
+                  el('button', { type: 'button', class: 'btn', style: 'min-height:26px;font-size:12px', disabled: u.sessions === 0, onclick: () => { u.sessions = 0; render(); toast(`Todas las sesiones de ${PEOPLE_EXT[u.id].name} invalidadas · evento auditado`); } }, icon('log-out'), 'Invalidar todas las sesiones')
+                )
+              )
+            )))
+          ))
+        ),
+        el('div', { class: 'grid-2' },
+          el('section', { class: 'card', 'aria-labelledby': 'h-grants' },
+            el('div', { class: 'card-h' }, el('h2', { id: 'h-grants' }, 'Grants con alcance (org / team / project)'), el('span', { class: 'badge' }, `${grants.length}`)),
+            selfAssignErr ? el('div', { class: 'banner is-danger', role: 'alert' }, icon('ban'), el('div', {}, el('strong', {}, 'Operación denegada'), el('p', {}, selfAssignErr))) : null,
+            grantForm,
+            el('div', { class: 'tbl-wrap' }, el('table', { class: 'dtable' },
+              el('thead', {}, el('tr', {}, ...['Usuario', 'Alcance', 'Rol / Capability', 'Concedido por'].map((h) => el('th', { scope: 'col' }, h)))),
+              el('tbody', {}, ...grants.map((g) => el('tr', {},
+                el('td', {}, PEOPLE_EXT[g.user]?.name ?? g.user),
+                el('td', { class: 'num' }, `${g.scopeType}:${g.scopeRef}`),
+                el('td', {}, g.role),
+                el('td', { class: 'num' }, `${g.grantedBy} · ${g.at}`)
+              )))
+            ))
+          ),
+          el('div', { style: 'display:grid;gap:16px;align-content:start' },
+            el('section', { class: 'card', 'aria-labelledby': 'h-teams' },
+              el('div', { class: 'card-h' }, el('h2', { id: 'h-teams' }, 'Equipos corporativos')),
+              el('ul', { class: 'p-deps' },
+                ...[['PMO y Producto', '2 personas · LF, NE'], ['Arquitectura', '1 persona · MP'], ['Ingeniería', '1 persona · JO'], ['Calidad', '1 persona + 1 virtual · AR, QA-V'], ['Soporte', '1 persona · OV'], ['Plataforma IT', '1 persona · CN']].map(([t, d]) =>
+                  el('li', { style: 'grid-template-columns:160px 1fr' }, el('strong', {}, t), el('span', { class: 'dim' }, d))
+                )
+              )
+            ),
+            el('section', { class: 'card', 'aria-labelledby': 'h-cals' },
+              el('div', { class: 'card-h' }, el('h2', { id: 'h-cals' }, 'Calendarios corporativos versionados')),
+              el('ul', { class: 'p-deps' },
+                el('li', { style: 'grid-template-columns:60px 1fr auto' }, el('span', { class: 'g-code' }, 'v2'), el('span', {}, 'Corporativo España L–V (2026-2027) · Europe/Madrid'), el('span', { class: 'badge badge-ok' }, 'Vigente')),
+                el('li', { style: 'grid-template-columns:60px 1fr auto' }, el('span', { class: 'g-code' }, 'v3'), el('span', {}, 'Corporativo España L–V + puente 07 dic'), el('span', { class: 'badge' }, 'Publicado')),
+                el('li', { style: 'grid-template-columns:60px 1fr auto' }, el('span', { class: 'g-code' }, 'v1'), el('span', {}, 'Corporativo España L–V (2026) · inmutable'), el('span', { class: 'badge' }, 'Histórico'))
+              )
+            )
+          )
+        )
+      )
+    );
+  }
+  render();
+}
+</script>
+</body>
+</html>

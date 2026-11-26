@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>13 · Importación y exportación — Asserta Projects</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../ux-ap002a/shared/base.css">
+<link rel="stylesheet" href="../ux-ap002a/c/c.css">
+<link rel="stylesheet" href="shared/ap002b.css">
+</head>
+<body>
+<nav id="nav"></nav>
+<main class="page-main">
+  <div id="masthead-slot"></div>
+  <div class="page-scroll" id="content"></div>
+</main>
+<script type="module">
+import { el, icon } from '../ux-ap002a/shared/util.js';
+import { mountShell, makeMasthead, readItem, extendedStateBlock } from './shared/shell.js';
+
+const { role, bindNavToggle, toast, estado } = mountShell({ navKey: 'import-export' });
+let step = 1;
+let fixErrors = false;
+let importCommitted = false;
+
+const { header, navBtn } = makeMasthead({
+  kickerParts: [el('span', {}, '09 Importación y exportación')],
+  title: 'Importación y exportación de planes',
+  dateline: [
+    el('span', {}, 'Importación atómica (todo o nada · validación completa del motor antes de persistir)'),
+    el('span', {}, 'Exportación con neutralización de fórmulas CSV/XLSX (=, +, -, @) y control RBAC'),
+  ],
+  reads: [
+    readItem('Proyecto destino', 'PPV2'),
+    readItem('Formato JSON', 'v1.0', 'esquema'),
+  ],
+});
+document.querySelector('#masthead-slot').replaceWith(header);
+bindNavToggle(navBtn);
+
+const content = document.querySelector('#content');
+
+if (estado) {
+  content.replaceChildren(extendedStateBlock(estado));
+} else if (role.caps.isItAdmin) {
+  content.replaceChildren(extendedStateBlock('sinpermiso', {
+    sinpermisoTitle: 'Admin IT no importa ni exporta planes de proyecto',
+    sinpermisoBody: 'La exportación e importación requieren project.read / project.write. platform.admin no otorga acceso a datos de negocio.',
+    sinpermisoActions: [{ label: 'Ir a Administración', primary: true, href: 'admin.html' }],
+  }));
+} else {
+  const STEPS = [
+    { n: 1, label: 'Carga CSV/XLSX' },
+    { n: 2, label: 'Mapeo de columnas' },
+    { n: 3, label: 'Validación por fila' },
+    { n: 4, label: 'Preview atómico' },
+    { n: 5, label: 'Confirmación' },
+  ];
+
+  const VALIDATION_ROWS = [
+    { row: 2, wbs: '6.1', name: 'Migración de catálogos legacy', dep: '5.1 FS', err: null },
+    { row: 3, wbs: '6.2', name: 'Validación cruzada proveedores', dep: '6.1 FS', err: null },
+    { row: 4, wbs: '6.3', name: 'Revisión circular de prueba', dep: '6.4 FS → 6.3 FS', err: 'Ciclo de dependencias detectado (6.3 → 6.4 → 6.3)' },
+    { row: 5, wbs: '6.4', name: 'Vínculo inválido a fase resumen', dep: '2 FS', err: 'Vínculo prohibido a grupo WBS «2 Diseño» (solo tareas hoja o hitos)' },
+  ];
+
+  function renderImportBody() {
+    if (step === 1) {
+      return el('div', { style: 'display:grid;gap:12px' },
+        el('div', { class: 'form-grid' },
+          el('div', { class: 'form-field' }, el('label', { for: 'imp-proj' }, 'Proyecto destino'), el('select', { id: 'imp-proj' }, el('option', {}, 'PPV2 · Portal de proveedores v2 (rev. 41)'), el('option', {}, 'Crear proyecto nuevo desde archivo'))),
+          el('div', { class: 'form-field' }, el('label', { for: 'imp-file' }, 'Archivo origen (simulado)'), el('input', { id: 'imp-file', type: 'text', value: 'plan-ampliacion-fase6.xlsx (24 KB · 4 filas)', readonly: true }))
+        ),
+        el('div', { class: 'banner is-info' }, icon('shield'), el('div', {}, el('strong', {}, 'Carga validada en servidor'), el('p', {}, 'Se comprueba tipo MIME real, límite de tamaño, ausencia de fórmulas activas y esquema de columnas antes de ejecutar el motor.')))
+      );
+    }
+    if (step === 2) {
+      const maps = [['Col A · Codigo_WBS', 'wbsCode'], ['Col B · Nombre_Tarea', 'name'], ['Col C · Duracion_Dias', 'durationDays'], ['Col D · Predecesoras', 'dependencies'], ['Col E · Responsable_OID', 'responsible']];
+      return el('div', { class: 'tbl-wrap' }, el('table', { class: 'dtable' },
+        el('thead', {}, el('tr', {}, ...['Columna en archivo', 'Campo Asserta Projects', 'Estado'].map((h) => el('th', { scope: 'col' }, h)))),
+        el('tbody', {}, ...maps.map(([src, dst]) => el('tr', {}, el('td', { class: 'num' }, src), el('td', { class: 'g-code' }, dst), el('td', {}, el('span', { class: 'badge badge-ok' }, icon('check'), 'Mapeado')))))
+      ));
+    }
+    if (step === 3) {
+      const errs = fixErrors ? 0 : 2;
+      return el('div', { style: 'display:grid;gap:12px' },
+        errs > 0
+          ? el('div', { class: 'banner is-danger', role: 'alert' }, icon('triangle-alert'), el('div', {}, el('strong', {}, '2 errores bloqueantes detectados — importación atómica detenida'), el('p', {}, 'No se permite importar parcialmente un plan inválido. Corrige el ciclo y el vínculo al grupo o aplica la corrección simulada para continuar.')))
+          : el('div', { class: 'banner is-ok', role: 'status' }, icon('check-circle-2'), el('div', {}, el('strong', {}, 'Validación superada (0 errores)'), el('p', {}, 'Todas las filas cumplen el contrato del motor AP-004. Ya puedes revisar el preview atómico.'))),
+        el('div', { class: 'tbl-wrap' }, el('table', { class: 'dtable' },
+          el('thead', {}, el('tr', {}, ...['Fila', 'WBS', 'Tarea', 'Dependencia', 'Resultado'].map((h) => el('th', { scope: 'col' }, h)))),
+          el('tbody', {}, ...VALIDATION_ROWS.map((r) => el('tr', {},
+            el('td', { class: 'num' }, `#${r.row}`),
+            el('td', { class: 'g-code' }, r.wbs),
+            el('td', {}, r.name),
+            el('td', { class: 'num' }, fixErrors && r.err ? '6.2 FS (corregido)' : r.dep),
+            el('td', {}, !fixErrors && r.err ? el('span', { class: 'badge badge-danger' }, icon('triangle-alert'), r.err) : el('span', { class: 'badge badge-ok' }, icon('check'), 'Válida'))
+          )))
+        )),
+        el('label', { class: 'form-check' },
+          el('input', { type: 'checkbox', checked: fixErrors, onchange: (e) => { fixErrors = e.target.checked; render(); } }),
+          'Simular archivo corregido (eliminar ciclo 6.3↔6.4 y cambiar dependencia del grupo 2 a la tarea hoja 6.2)'
+        )
+      );
+    }
+    if (step === 4) {
+      return el('div', { style: 'display:grid;gap:12px' },
+        el('div', { class: 'banner is-info' }, icon('info'), el('div', {}, el('strong', {}, 'Preview atómico sobre PPV2 (revisión 41 → 42)'), el('p', {}, 'Se añadirán 4 tareas nuevas en una única transacción con registro de auditoría y outbox. Ninguna tarea existente sufre conflictos nuevos.'))),
+        el('dl', { class: 'p-dl' },
+          el('dt', {}, 'Tareas nuevas'), el('dd', { class: 'num' }, '4 (6.1, 6.2, 6.3, 6.4)'),
+          el('dt', {}, 'Fin previsto'), el('dd', { class: 'num' }, '01 feb 2027 → 12 feb 2027 (+9 d laborables)'),
+          el('dt', {}, 'Conflictos'), el('dd', { class: 'num' }, '0 nuevos (1 existente en 3.3 se mantiene)')
+        )
+      );
+    }
+    return el('div', { class: 'banner is-ok', role: 'status' }, icon('check-circle-2'), el('div', {},
+      el('strong', {}, importCommitted ? 'Importación confirmada · PPV2 revisión 42' : 'Listo para confirmar importación atómica'),
+      el('p', {}, importCommitted ? 'Las 4 tareas se han incorporado en transacción atómica y se ha registrado el evento en auditoría y RF-33.' : 'Pulsa «Confirmar importación» para ejecutar la transacción atómica sobre PPV2.')
+    ));
+  }
+
+  function render() {
+    const canNext = step < 5 && !(step === 3 && !fixErrors);
+    const importCard = el('section', { class: 'card', 'aria-labelledby': 'h-imp' },
+      el('div', { class: 'card-h' }, el('div', {}, el('span', { class: 'eyebrow-n' }, 'Entrada'), el('h2', { id: 'h-imp' }, 'Asistente de importación CSV / XLSX')), el('span', { class: 'badge' }, `Paso ${step} de 5`)),
+      el('div', { class: 'stepper', role: 'navigation', 'aria-label': 'Pasos de importación' }, ...STEPS.map((s) => el('button', {
+        type: 'button',
+        class: s.n < step ? 'done' : '',
+        'aria-current': s.n === step ? 'step' : null,
+        onclick: () => { if (s.n <= 3 || fixErrors) { step = s.n; render(); } else toast('Resuelve los errores del paso 3 antes de avanzar'); },
+      }, el('span', { class: 'sn' }, `0${s.n}`), el('span', {}, s.label)))),
+      renderImportBody(),
+      el('div', { style: 'display:flex;justify-content:space-between;gap:8px;padding-top:10px;border-top:1px solid var(--line)' },
+        el('button', { type: 'button', class: 'btn', disabled: step === 1, onclick: () => { step = Math.max(1, step - 1); render(); } }, icon('arrow-left'), 'Paso anterior'),
+        step < 5
+          ? el('button', { type: 'button', class: 'btn btn-primary', disabled: !canNext, onclick: () => { step += 1; render(); } }, 'Siguiente paso', icon('arrow-right'))
+          : el('button', { type: 'button', class: 'btn btn-primary', disabled: importCommitted, onclick: () => { importCommitted = true; render(); toast('Importación atómica confirmada · PPV2 rev. 42'); } }, icon('upload'), importCommitted ? 'Confirmado' : 'Confirmar importación')
+      )
+    );
+
+    const exportForm = el('form', { class: 'form-grid', onsubmit: (e) => {
+      e.preventDefault();
+      const fmt = e.currentTarget.querySelector('#exp-fmt').value;
+      toast(`Exportación ${fmt} generada en servidor con control RBAC y saneado anti-fórmulas`);
+    } },
+      el('div', { class: 'form-field' }, el('label', { for: 'exp-fmt' }, 'Formato'),
+        el('select', { id: 'exp-fmt' },
+          el('option', { value: 'CSV' }, 'CSV (UTF-8 con BOM · celdas neutralizadas)'),
+          el('option', { value: 'XLSX' }, 'XLSX (libro estructurado · sin macros)'),
+          el('option', { value: 'PDF' }, 'PDF (Gantt + tabla ejecutiva)'),
+          el('option', { value: 'PNG' }, 'PNG (captura cronograma a escala)'),
+          el('option', { value: 'JSON v1.0' }, 'JSON versionado (schemaVersion: 1.0)')
+        )
+      ),
+      el('div', { class: 'form-field' }, el('label', { for: 'exp-scale' }, 'Escala y rango (PDF/PNG)'),
+        el('select', { id: 'exp-scale' }, el('option', {}, 'Proyecto completo (nov 2026 – feb 2027) · Semana'), el('option', {}, 'Próximos 30 días · Día'), el('option', {}, 'Trimestre · Mes'))
+      ),
+      el('div', { class: 'form-field full' },
+        el('label', { class: 'form-check' }, el('input', { type: 'checkbox', checked: true }), 'Incluir dependencias y línea base inicial'),
+        role.caps.financialRead
+          ? el('label', { class: 'form-check' }, el('input', { type: 'checkbox', checked: false }), 'Incluir columnas económicas EUR (autorizado: financial.read)')
+          : el('div', { class: 'banner is-info', style: 'margin-top:6px' }, icon('lock'), el('div', {}, el('strong', {}, 'Columnas económicas omitidas en exportación'), el('p', {}, 'Tu rol actual no dispone de financial.read; las exportaciones nunca incluyen tarifas ni importes.')))
+      ),
+      el('div', { class: 'form-field full' },
+        el('div', { class: 'banner is-warn' }, icon('shield-alert'), el('div', {},
+          el('strong', {}, 'Neutralización de inyección de fórmulas en CSV/XLSX'),
+          el('p', {}, 'Cualquier texto de tarea o comentario que empiece por =, +, - o @ se neutraliza automáticamente en servidor antes de generar la hoja de cálculo.')
+        ))
+      ),
+      el('div', { class: 'form-field full', style: 'display:flex;justify-content:flex-end' },
+        el('button', { type: 'submit', class: 'btn btn-primary' }, icon('download'), 'Generar exportación')
+      )
+    );
+
+    const exportCard = el('section', { class: 'card', 'aria-labelledby': 'h-exp' },
+      el('div', { class: 'card-h' }, el('div', {}, el('span', { class: 'eyebrow-n' }, 'Salida'), el('h2', { id: 'h-exp' }, 'Exportación controlada')), el('span', { class: 'badge' }, 'PPV2 rev. 41')),
+      exportForm
+    );
+
+    content.replaceChildren(el('div', { class: 'page-stack' }, importCard, exportCard));
+  }
+  render();
+}
+</script>
+</body>
+</html>

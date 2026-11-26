@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>10 · Costes y presupuestos — PPV2 · Asserta Projects</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../ux-ap002a/shared/base.css">
+<link rel="stylesheet" href="../ux-ap002a/c/c.css">
+<link rel="stylesheet" href="shared/ap002b.css">
+</head>
+<body>
+<nav id="nav"></nav>
+<main class="page-main">
+  <div id="masthead-slot"></div>
+  <div class="toolbar" id="toolbar" role="toolbar" aria-label="Acciones de costes"></div>
+  <div class="page-scroll" id="content"></div>
+</main>
+<script type="module">
+import { el, icon, avatar } from '../ux-ap002a/shared/util.js';
+import { DEMO, RATES, TASK_EXT, FIXED_COSTS_PPV2, PROJECTS, fmtEur } from './shared/data-ext.js';
+import { mountShell, makeMasthead, projectTabs, readItem, extendedStateBlock } from './shared/shell.js';
+
+const { role, bindNavToggle, toast, estado } = mountShell({ navKey: 'costes', projectCode: 'PPV2' });
+const ppv2 = PROJECTS[0];
+
+const { header, navBtn } = makeMasthead({
+  kickerParts: [el('a', { href: 'proyectos.html' }, '02 Proyectos'), el('span', {}, '/'), el('span', {}, 'PPV2'), el('span', {}, '/'), el('span', {}, '06 Costes')],
+  tabs: projectTabs('costes', 'PPV2'),
+  title: 'Costes y presupuestos · PPV2',
+  dateline: role.caps.financialRead
+    ? [el('span', {}, 'Moneda: EUR (aritmética decimal exacta, 2 decimales)'), el('span', {}, 'Tarifas versionadas congeladas al aprobar horas')]
+    : [el('span', {}, 'Acceso restringido a capability financial.read')],
+  reads: role.caps.financialRead
+    ? [
+        readItem('Presupuesto', fmtEur(ppv2.budgetEur)),
+        readItem('Estimado', fmtEur(ppv2.estimatedEur), 'incompleto', 'warn', 'Falta tarifa vigente para OV (tareas 3.3 y 5.2). Nunca se sustituye por 0,00 €.'),
+        readItem('Real aprobado', fmtEur(ppv2.actualEur)),
+      ]
+    : null,
+});
+document.querySelector('#masthead-slot').replaceWith(header);
+bindNavToggle(navBtn);
+
+const toolbar = document.querySelector('#toolbar');
+const content = document.querySelector('#content');
+
+if (estado) {
+  toolbar.hidden = true;
+  content.replaceChildren(extendedStateBlock(estado));
+} else if (!role.caps.financialRead) {
+  // Sin permiso: NO se renderiza ni envía ninguna cifra económica al DOM
+  toolbar.hidden = true;
+  content.replaceChildren(extendedStateBlock('sinpermiso', {
+    sinpermisoTitle: 'No tienes permiso para ver costes y presupuestos (financial.read)',
+    sinpermisoBody: role.caps.isItAdmin
+      ? 'El perfil Admin IT (platform.admin) no incluye project.read ni financial.read (separación de funciones ADR-003). No se ha cargado ninguna cifra económica.'
+      : 'Tu perfil Miembro no tiene concedida la capability financial.read en PPV2. El servidor omite por completo tarifas, presupuestos e importes.',
+    sinpermisoActions: [
+      { label: 'Volver al Gantt de PPV2', primary: true, href: role.caps.isItAdmin ? 'admin.html' : 'gantt.html' },
+      { label: 'Ver Inicio', href: 'inicio.html' },
+    ],
+  }));
+} else {
+  const fixedCosts = structuredClone(FIXED_COSTS_PPV2);
+  let showOnlyIncomplete = false;
+
+  const btnInc = el('button', { type: 'button', class: 'chip', 'aria-pressed': 'false', onclick: (e) => {
+    showOnlyIncomplete = !showOnlyIncomplete;
+    e.currentTarget.setAttribute('aria-pressed', String(showOnlyIncomplete));
+    render();
+  } }, icon('triangle-alert'), 'Solo partidas sin tarifa');
+
+  toolbar.replaceChildren(
+    btnInc,
+    el('span', { class: 'sp' }),
+    el('button', { type: 'button', class: 'btn', onclick: () => toast('Exportación financiera XLSX preparada (requiere financial.read)') }, icon('download'), 'Exportar resumen EUR'),
+    el('a', { class: 'btn', href: 'horas.html' }, icon('clock'), 'Revisar horas aprobadas')
+  );
+
+  function render() {
+    const tasks = DEMO.order.filter((id) => DEMO.meta[id].kind === 'task');
+    const taskRows = tasks.map((id) => {
+      const m = DEMO.meta[id], ext = TASK_EXT[id] ?? {}, r = RATES[m.responsible];
+      const estH = (m.effort ?? 0) / 60;
+      const realH = ext.actualHours ?? 0;
+      const missingRate = !r || r.eurHour == null;
+      return {
+        id, name: m.name, resp: m.responsible, rate: r, estH, realH, missingRate,
+        estEur: missingRate ? null : estH * r.eurHour,
+        realEur: missingRate ? null : realH * r.eurHour,
+      };
+    });
+    const visibleTasks = showOnlyIncomplete ? taskRows.filter((x) => x.missingRate) : taskRows;
+    const sumFixedEst = fixedCosts.reduce((s, f) => s + f.estimatedEur, 0);
+    const sumFixedReal = fixedCosts.reduce((s, f) => s + f.actualEur, 0);
+    const sumLaborEst = taskRows.reduce((s, x) => s + (x.estEur ?? 0), 0);
+    const sumLaborReal = taskRows.reduce((s, x) => s + (x.realEur ?? 0), 0);
+    const totalEst = sumLaborEst + sumFixedEst;
+    const totalReal = sumLaborReal + sumFixedReal;
+    const deviation = ppv2.budgetEur - totalEst;
+
+    content.replaceChildren(
+      el('div', { class: 'page-stack' },
+        el('div', { class: 'banner is-warn', role: 'alert' },
+          icon('triangle-alert'),
+          el('div', {},
+            el('strong', {}, 'Coste incompleto (sin tarifa vigente) — P-11'),
+            el('p', {}, 'El recurso Óscar Vidal (OV · Soporte) no tiene tarifa horaria vigente asignada. Las tareas 3.3 (24 h) y 5.2 (80 h) se marcan explícitamente como «Coste incompleto (sin tarifa)» y nunca se calculan con 0,00 € ficticio.')
+          )
+        ),
+        el('div', { class: 'figs', role: 'list', 'aria-label': 'Resumen económico PPV2' },
+          el('div', { class: 'fig', role: 'listitem' }, el('b', { style: 'font-size:clamp(26px,2.4vw,36px)' }, fmtEur(ppv2.budgetEur)), el('span', {}, 'presupuesto aprobado')),
+          el('div', { class: 'fig warn', role: 'listitem' }, el('b', { style: 'font-size:clamp(26px,2.4vw,36px)' }, fmtEur(totalEst)), el('span', {}, 'estimado (coste incompleto)')),
+          el('div', { class: 'fig', role: 'listitem' }, el('b', { style: 'font-size:clamp(26px,2.4vw,36px)' }, fmtEur(totalReal)), el('span', {}, 'real aprobado + fijos')),
+          el('div', { class: `fig ${deviation < 0 ? 'danger' : ''}`, role: 'listitem' }, el('b', { style: 'font-size:clamp(26px,2.4vw,36px)' }, `${deviation >= 0 ? '+' : ''}${fmtEur(deviation)}`), el('span', {}, 'margen sobre presupuesto'))
+        ),
+        el('section', { 'aria-labelledby': 'h-rates' },
+          el('div', { class: 'sec-h' }, el('span', { class: 'n' }, '01 —'), el('h2', { id: 'h-rates' }, 'Desglose por tarea y tarifa versionada')),
+          el('div', { class: 'tbl-wrap', style: 'margin-top:12px' },
+            el('table', { class: 'dtable' },
+              el('thead', {}, el('tr', {},
+                el('th', { scope: 'col' }, 'WBS'),
+                el('th', { scope: 'col' }, 'Tarea'),
+                el('th', { scope: 'col' }, 'Responsable'),
+                el('th', { scope: 'col', class: 'num-col' }, 'Tarifa congelada'),
+                el('th', { scope: 'col', class: 'num-col' }, 'Horas est. / real'),
+                el('th', { scope: 'col', class: 'num-col' }, 'Coste estimado'),
+                el('th', { scope: 'col', class: 'num-col' }, 'Coste real')
+              )),
+              el('tbody', {}, ...visibleTasks.map((x) => el('tr', {},
+                el('td', { class: 'g-code' }, x.id),
+                el('td', {}, el('a', { href: `tarea.html?task=${x.id}` }, x.name)),
+                el('td', {}, el('span', { class: 'p-person' }, avatar(DEMO.people, x.resp, 'av-xs'), DEMO.people[x.resp]?.name)),
+                el('td', { class: 'num-col' }, x.missingRate
+                  ? el('span', { class: 'badge badge-warn' }, icon('triangle-alert'), 'Sin tarifa')
+                  : `${fmtEur(x.rate.eurHour)}/h · ${x.rate.version}`),
+                el('td', { class: 'num-col' }, `${x.estH} h / ${x.realH} h`),
+                el('td', { class: 'num-col' }, x.missingRate
+                  ? el('span', { class: 'badge badge-warn' }, 'Coste incompleto (sin tarifa)')
+                  : fmtEur(x.estEur)),
+                el('td', { class: 'num-col' }, x.missingRate ? '—' : fmtEur(x.realEur))
+              )))
+            )
+          )
+        ),
+        el('section', { 'aria-labelledby': 'h-fixed' },
+          el('div', { class: 'sec-h' }, el('span', { class: 'n' }, '02 —'), el('h2', { id: 'h-fixed' }, 'Costes fijos del proyecto')),
+          el('div', { class: 'tbl-wrap', style: 'margin-top:12px' },
+            el('table', { class: 'dtable' },
+              el('thead', {}, el('tr', {}, ...['Concepto', 'Fecha', 'Estado', 'Estimado', 'Real', 'Desviación'].map((h, i) => el('th', { scope: 'col', class: i >= 3 ? 'num-col' : '' }, h)))),
+              el('tbody', {}, ...fixedCosts.map((f) => {
+                const diff = f.actualEur - f.estimatedEur;
+                return el('tr', {},
+                  el('td', {}, f.concept),
+                  el('td', { class: 'num' }, f.date),
+                  el('td', {}, el('span', { class: `badge ${f.status === 'aprobado' ? 'badge-ok' : ''}` }, f.status)),
+                  el('td', { class: 'num-col' }, fmtEur(f.estimatedEur)),
+                  el('td', { class: 'num-col' }, fmtEur(f.actualEur)),
+                  el('td', { class: 'num-col' }, f.actualEur > 0 ? `${diff > 0 ? '+' : ''}${fmtEur(diff)}` : '—')
+                );
+              }))
+            )
+          )
+        )
+      )
+    );
+  }
+  render();
+}
+</script>
+</body>
+</html>

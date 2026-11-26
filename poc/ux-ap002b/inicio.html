@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>01 · Inicio — Asserta Projects</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../ux-ap002a/shared/base.css">
+<link rel="stylesheet" href="../ux-ap002a/c/c.css">
+<link rel="stylesheet" href="shared/ap002b.css">
+</head>
+<body>
+<nav id="nav"></nav>
+<main style="grid-template-rows: auto minmax(0, 1fr)">
+  <div class="home" id="home"></div>
+</main>
+<script type="module">
+import { inicioData } from '../ux-ap002a/shared/inicio-data.js';
+import { el, icon, avatar, fmtShort, fmtStamp, isoWeek } from '../ux-ap002a/shared/util.js';
+import { DEMO, TOURS } from './shared/data-ext.js';
+import { mountShell, makeNavButton, extendedStateBlock } from './shared/shell.js';
+
+const { role, bindNavToggle, estado } = mountShell({ navKey: 'inicio' });
+const home = document.querySelector('#home');
+const navBtn = makeNavButton();
+bindNavToggle(navBtn);
+
+if (estado) {
+  home.replaceChildren(el('div', { class: 'kicker' }, navBtn, el('span', {}, '01 Inicio')), extendedStateBlock(estado));
+} else if (role.caps.isItAdmin) {
+  home.replaceChildren(
+    el('div', { class: 'kicker' }, navBtn, el('span', {}, '01 Inicio · Admin IT'), el('span', { class: 'sp' }), el('span', { class: 'proto-flag' }, 'Prototipo · datos ficticios')),
+    el('h1', { style: 'font-size:clamp(28px,2.8vw,38px);letter-spacing:-.04em;margin-top:10px' }, 'Consola de plataforma'),
+    el('div', { class: 'banner is-info', style: 'margin-top:16px' },
+      icon('shield'),
+      el('div', {},
+        el('strong', {}, 'Separación de funciones activa (ADR-003)'),
+        el('p', {}, 'El rol Admin IT no muestra tareas, hitos ni presupuestos de proyectos. Accede directamente a Administración, Auditoría de seguridad o Integraciones.')
+      )
+    ),
+    el('div', { class: 'grid-3', style: 'margin-top:20px' },
+      el('a', { class: 'screen-card', href: 'admin.html' }, el('span', { class: 'eyebrow-n' }, '10 · Gobierno IT'), el('h3', {}, 'Administración'), el('p', {}, 'Usuarios Entra ID, revocación de sesiones, equipos, calendarios y grants.')),
+      el('a', { class: 'screen-card', href: 'auditoria.html' }, el('span', { class: 'eyebrow-n' }, '11 · Seguridad'), el('h3', {}, 'Auditoría append-only'), el('p', {}, 'Eventos ALLOW/DENY con correlationId y diffs sanitizados.')),
+      el('a', { class: 'screen-card', href: 'integraciones.html' }, el('span', { class: 'eyebrow-n' }, '12 · Conectores'), el('h3', {}, 'Teams y Jira'), el('p', {}, 'Workflows autenticados por tenant y Jira Cloud solo lectura.'))
+    )
+  );
+} else {
+  const D = inicioData(DEMO), P = DEMO.people;
+  const pad = (n) => String(n).padStart(2, '0');
+  const dayFmt = (iso, o) => new Intl.DateTimeFormat('es-ES', { timeZone: 'UTC', ...o }).format(new Date(`${iso}T00:00:00Z`)).replace('.', '');
+  const fig = (n, label, cls, tip) => el('div', { class: `fig ${cls ?? ''}`, tabindex: '0', 'data-tip': tip, role: 'listitem' }, el('b', {}, pad(n)), el('span', {}, label));
+  const sec = (n, title, extra) => el('div', { class: 'sec-h' }, el('span', { class: 'n' }, `${n} —`), el('h2', {}, title), el('span', { class: 'sp' }), extra);
+
+  const byDay = new Map();
+  for (const t of D.mine) (byDay.get(t.finish) ?? byDay.set(t.finish, []).get(t.finish)).push(t);
+  const agenda = [...byDay].map(([date, list]) => el('div', { class: `day${date < DEMO.today ? ' over' : ''}` },
+    el('div', { class: 'd' }, el('b', {}, dayFmt(date, { day: '2-digit' })), el('span', {}, date < DEMO.today ? `Vencida · ${dayFmt(date, { month: 'short' })}` : `${dayFmt(date, { weekday: 'short' })} · ${dayFmt(date, { month: 'short' })}`)),
+    el('ul', {}, ...list.map((t) => {
+      const inner = [
+        el('span', { class: 'nm' }, t.milestone ? icon('diamond') : null, t.name, t.conflict ? el('span', { class: 'tag tag-conf', title: 'Conflicto' }, icon('triangle-alert', 'Conflicto')) : null),
+        el('span', { class: 'meta' }, `${t.code} · ${t.relation === 'responsable' ? 'responsable' : 'colaboras'}${t.critical ? ' · ruta crítica' : ''}`),
+        el('span', { class: 'pc' }, t.milestone ? '◇' : `${t.progress}%`),
+      ];
+      return el('li', {}, t.project === DEMO.project.code ? el('a', { href: `tarea.html?task=${t.id}` }, ...inner) : el('a', { href: `proyectos.html?p=${t.project}` }, ...inner));
+    }))
+  ));
+
+  home.replaceChildren(
+    el('div', { class: 'kicker' },
+      navBtn,
+      el('span', {}, `${dayFmt(DEMO.today, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} · semana ${isoWeek(DEMO.today)}`),
+      el('span', { class: 'sp' }),
+      el('a', { class: 'btn', href: 'horas.html', style: 'min-height:26px;font-size:12px;text-transform:none;letter-spacing:0' }, icon('clock'), 'Registrar horas'),
+      el('a', { class: 'btn btn-primary', href: 'proyectos.html?nuevo=1', style: 'min-height:26px;font-size:12px;text-transform:none;letter-spacing:0' }, icon('plus'), 'Nuevo proyecto'),
+      el('span', { class: 'proto-flag' }, 'Prototipo · datos ficticios')
+    ),
+    el('h1', { style: 'font-size:clamp(30px,3vw,42px);letter-spacing:-.04em;margin-top:10px' }, 'Mi trabajo'),
+    el('div', { class: 'figs', role: 'list', 'aria-label': 'Resumen' },
+      fig(D.counts.open, 'tareas abiertas', '', 'Tareas no completadas en las que eres responsable o colaboras.'),
+      fig(D.counts.overdue, 'vencida', D.counts.overdue ? 'warn' : '', 'Advertencia: fecha de fin anterior a hoy y sin completar.'),
+      fig(D.counts.conflicts, 'conflicto de planificación', D.counts.conflicts ? 'danger' : '', 'Error de planificación: una dependencia no se cumple por una fecha manual o un hecho real.'),
+      fig(D.counts.milestones14, 'hitos en 14 días', '', 'Hitos no completados con fecha en las próximas dos semanas.')
+    ),
+    el('div', { class: 'cols12' },
+      el('section', { class: 'c7', 'aria-labelledby': 's1' }, (() => { const h = sec('01', 'Mis tareas, por fecha de fin', el('a', { class: 'dim', href: 'kanban.html', style: 'font-size:12.5px' }, 'Ver Kanban →')); h.querySelector('h2').id = 's1'; return h; })(), ...agenda),
+      el('div', { class: 'c5', style: 'display:grid;gap:32px;align-content:start' },
+        el('section', { 'aria-labelledby': 's2' }, (() => { const h = sec('02', 'Hitos', el('a', { class: 'dim', href: 'cartera.html', style: 'font-size:12.5px' }, 'Cartera →')); h.querySelector('h2').id = 's2'; return h; })(),
+          el('ul', { class: 'mstone' }, ...D.milestones.slice(0, 6).map((m) => el('li', {},
+            el('time', { datetime: m.date, class: m.overdue ? 'over' : '' }, fmtShort(m.date)),
+            el('span', { class: 'g-code' }, m.project),
+            el('span', { class: m.overdue ? 'over' : m.critical ? 'crit' : '' }, m.name, m.overdue ? ' — vencido' : m.critical ? ' — ruta crítica' : '')
+          )))),
+        el('section', { 'aria-labelledby': 's3' }, (() => { const h = sec('03', 'Avisos', el('a', { class: 'dim', href: 'notificaciones.html', style: 'font-size:12.5px' }, 'Bandeja →')); h.querySelector('h2').id = 's3'; return h; })(),
+          el('ul', { class: 'notes' },
+            ...D.conflicts.map((c) => el('li', {}, el('span', { class: 'conf' }, icon('triangle-alert', 'Conflicto')), el('div', {},
+              el('a', { href: `gantt.html?task=${c.successorId}` }, el('b', {}, `${c.successorId} ${c.name}`)),
+              el('p', {}, `Empieza ${c.deficitDays} días laborables antes de lo que exige ${c.type} desde ${c.pred}. Conflicto reconocido; la fecha manual se mantiene.`)))),
+            ...DEMO.notifications.map((n) => el('li', { class: n.unread ? 'unread' : '' }, n.actor ? avatar(P, n.actor, 'av-sm') : el('span', { class: 'av av-sm' }, icon('calendar-clock')),
+              el('div', {}, el('p', {}, el('b', {}, n.actor ? P[n.actor].name : 'Recordatorio'), ` ${n.text}`), n.quote ? el('p', { class: 'q' }, `«${n.quote}»`) : null, el('p', { class: 't' }, fmtStamp(n.at)))))
+          ))
+      ),
+      el('section', { class: 'c12', 'aria-labelledby': 's4' }, (() => { const h = sec('04', 'Proyectos activos', el('a', { class: 'dim', href: 'proyectos.html', style: 'font-size:12.5px' }, 'Todos los proyectos →')); h.querySelector('h2').id = 's4'; return h; })(),
+        el('table', { class: 'ptable' },
+          el('thead', {}, el('tr', {}, ...['Nº', 'Proyecto', 'Estado de salud', 'Avance', 'Próximo hito', 'Propietaria', 'Vistas'].map((h) => el('th', { scope: 'col' }, h)))),
+          el('tbody', {}, ...D.projects.map((p) => el('tr', {},
+            el('td', { class: 'g-code' }, p.code),
+            el('td', { class: 'nm' }, el('a', { href: p.gantt ? 'gantt.html' : p.restricted ? 'ajustes-proyecto.html?p=AUDA' : `proyectos.html?p=${p.code}` }, p.name), p.restricted ? el('span', { title: 'Proyecto restringido' }, ' ', icon('lock', 'Restringido')) : null),
+            el('td', {}, el('span', { class: `health ${p.health}` }, p.reason)),
+            el('td', { class: 'big' }, `${p.progress}%`),
+            el('td', {}, el('time', { class: 'num', datetime: p.next.date }, fmtShort(p.next.date)), ` ${p.next.name}`),
+            el('td', {}, el('span', { class: 'p-person' }, avatar(P, p.owner, 'av-xs'), P[p.owner].name)),
+            el('td', {}, p.gantt ? el('span', { style: 'display:inline-flex;gap:6px' }, el('a', { class: 'badge', href: 'gantt.html' }, 'Gantt'), el('a', { class: 'badge', href: 'tabla.html' }, 'Tabla'), el('a', { class: 'badge', href: 'kanban.html' }, 'Kanban')) : el('a', { class: 'badge', href: p.restricted ? 'ajustes-proyecto.html?p=AUDA' : `proyectos.html?p=${p.code}` }, 'Ficha'))
+          )))
+        )
+      ),
+      el('section', { class: 'c12', 'aria-labelledby': 's5' }, (() => { const h = sec('05', 'Accesos rápidos a los 7 recorridos', el('a', { class: 'dim', href: 'index.html', style: 'font-size:12.5px' }, 'Ver mapa completo (17) →')); h.querySelector('h2').id = 's5'; return h; })(),
+        el('div', { style: 'display:flex;flex-wrap:wrap;gap:8px;margin-top:12px' },
+          ...TOURS.map((t) => {
+            const [base, hash] = t.steps[0].url.split('#');
+            const href = `${base}${base.includes('?') ? '&' : '?'}tour=${t.id}&step=1${hash ? `#${hash}` : ''}`;
+            return el('a', { class: 'btn', href }, el('span', { class: 'g-code' }, `0${t.id}`), t.title);
+          })
+        )
+      )
+    )
+  );
+}
+</script>
+</body>
+</html>

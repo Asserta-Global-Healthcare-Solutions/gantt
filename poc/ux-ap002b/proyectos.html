@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>02 · Listado de proyectos — Asserta Projects</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../ux-ap002a/shared/base.css">
+<link rel="stylesheet" href="../ux-ap002a/c/c.css">
+<link rel="stylesheet" href="shared/ap002b.css">
+</head>
+<body>
+<nav id="nav"></nav>
+<main class="page-main">
+  <div id="masthead-slot"></div>
+  <div class="toolbar" id="toolbar" role="toolbar" aria-label="Filtros de proyectos"></div>
+  <div class="page-scroll" id="content"></div>
+</main>
+<dialog class="modal" id="dlg-create" aria-labelledby="dlg-create-title"></dialog>
+<script type="module">
+import { el, icon, avatar, fmtShort } from '../ux-ap002a/shared/util.js';
+import { DEMO, PROJECTS, TEMPLATES } from './shared/data-ext.js';
+import { mountShell, makeMasthead, readItem, extendedStateBlock } from './shared/shell.js';
+
+const { role, bindNavToggle, toast, estado } = mountShell({ navKey: 'proyectos' });
+const q = new URLSearchParams(location.search);
+const list = structuredClone(PROJECTS);
+const state = { q: q.get('p') ?? '', status: '', client: '', team: '', owner: '', showArchived: false };
+
+const { header, navBtn } = makeMasthead({
+  kickerParts: [el('span', {}, '02 Proyectos')],
+  title: 'Listado de proyectos',
+  dateline: [
+    el('span', {}, 'Visibilidad filtrada en servidor (deny-by-default)'),
+    el('span', {}, 'Proyectos restringidos marcados con candado'),
+  ],
+  reads: [
+    readItem('Activos', String(list.filter((p) => p.status !== 'archivado').length), '', '', 'Proyectos visibles para tu usuario en estado activo o en riesgo.'),
+    readItem('En riesgo', String(list.filter((p) => p.health === 'red').length), '', 'danger', 'Proyectos con hito vencido o desviación crítica.'),
+    readItem('Restringidos', String(list.filter((p) => p.restricted).length), '', '', 'Proyectos con lista de acceso explícita (P-13).'),
+  ],
+});
+document.querySelector('#masthead-slot').replaceWith(header);
+bindNavToggle(navBtn);
+
+const toolbar = document.querySelector('#toolbar');
+const content = document.querySelector('#content');
+const dlg = document.querySelector('#dlg-create');
+
+if (estado) {
+  toolbar.hidden = true;
+  content.replaceChildren(extendedStateBlock(estado, { vacioTitle: 'No tienes proyectos asignados', vacioCta: 'Crear proyecto' }));
+} else if (role.caps.isItAdmin) {
+  toolbar.hidden = true;
+  content.replaceChildren(extendedStateBlock('sinpermiso', {
+    sinpermisoTitle: 'Admin IT no accede al listado de contenido de proyectos',
+    sinpermisoBody: 'La capability platform.admin gestiona usuarios, equipos, calendarios y grants, pero no concede project.read. Para acceder a un proyecto restringido o estándar se requiere asignación explícita o break-glass aprobado.',
+    sinpermisoActions: [{ label: 'Ir a Administración', primary: true, href: 'admin.html' }, { label: 'Ver Auditoría', href: 'auditoria.html' }],
+  }));
+} else {
+  const uniq = (fn) => [...new Set(list.map(fn))];
+  const clients = uniq((p) => p.client);
+  const teams = uniq((p) => p.team);
+  const owners = uniq((p) => p.owner);
+
+  const qInput = el('input', { type: 'search', value: state.q, placeholder: 'Código o nombre…', 'aria-label': 'Buscar proyecto', oninput: (e) => { state.q = e.target.value; render(); } });
+  const selStatus = el('select', { 'aria-label': 'Estado', onchange: (e) => { state.status = e.target.value; render(); } },
+    el('option', { value: '' }, 'Todos los estados'),
+    el('option', { value: 'activo' }, 'Activo'),
+    el('option', { value: 'en_riesgo' }, 'En riesgo'),
+    el('option', { value: 'archivado' }, 'Archivado')
+  );
+  const selClient = el('select', { 'aria-label': 'Área / cliente', onchange: (e) => { state.client = e.target.value; render(); } },
+    el('option', { value: '' }, 'Todas las áreas'),
+    ...clients.map((c) => el('option', { value: c }, c))
+  );
+  const selTeam = el('select', { 'aria-label': 'Equipo', onchange: (e) => { state.team = e.target.value; render(); } },
+    el('option', { value: '' }, 'Todos los equipos'),
+    ...teams.map((t) => el('option', { value: t }, t))
+  );
+  const selOwner = el('select', { 'aria-label': 'Propietario', onchange: (e) => { state.owner = e.target.value; render(); } },
+    el('option', { value: '' }, 'Todos los responsables'),
+    ...owners.map((o) => el('option', { value: o }, DEMO.people[o]?.name ?? o))
+  );
+  const archBtn = el('button', { type: 'button', class: 'chip', 'aria-pressed': 'false', onclick: (e) => { state.showArchived = !state.showArchived; e.currentTarget.setAttribute('aria-pressed', String(state.showArchived)); render(); } }, 'Mostrar archivados');
+  const createBtn = el('button', { type: 'button', class: 'btn btn-primary', onclick: openCreate }, icon('folder-plus'), 'Crear proyecto');
+
+  toolbar.replaceChildren(
+    el('label', { class: 'field' }, icon('search'), qInput),
+    el('label', { class: 'field' }, selStatus),
+    el('label', { class: 'field' }, selClient),
+    el('label', { class: 'field' }, selTeam),
+    el('label', { class: 'field' }, selOwner),
+    archBtn,
+    el('span', { class: 'sp' }),
+    el('a', { class: 'btn', href: 'plantillas.html' }, icon('copy-plus'), 'Desde plantilla'),
+    createBtn
+  );
+
+  function filtered() {
+    return list.filter((p) => {
+      if (!state.showArchived && state.status !== 'archivado' && p.status === 'archivado') return false;
+      if (state.status && p.status !== state.status) return false;
+      if (state.client && p.client !== state.client) return false;
+      if (state.team && p.team !== state.team) return false;
+      if (state.owner && p.owner !== state.owner) return false;
+      if (state.q && !`${p.code} ${p.name} ${p.client}`.toLowerCase().includes(state.q.toLowerCase())) return false;
+      return true;
+    });
+  }
+
+  function render() {
+    const rows = filtered();
+    const statusLabel = { activo: 'Activo', en_riesgo: 'En riesgo', archivado: 'Archivado' };
+    content.replaceChildren(
+      el('div', { class: 'page-stack' },
+        rows.length === 0
+          ? extendedStateBlock('vacio', { vacioTitle: 'Ningún proyecto coincide con los filtros', vacioBody: 'Prueba a limpiar la búsqueda o activar «Mostrar archivados».', vacioCta: 'Limpiar filtros', vacioHref: 'proyectos.html' })
+          : el('div', { class: 'tbl-wrap' },
+              el('table', { class: 'dtable' },
+                el('thead', {}, el('tr', {}, ...['Código', 'Proyecto', 'Área / Cliente', 'Equipo', 'Estado', 'Salud (motivo explícito)', 'Avance', 'Fin previsto', 'Propietaria', 'Acciones'].map((h) => el('th', { scope: 'col' }, h)))),
+                el('tbody', {}, ...rows.map((p) => el('tr', {},
+                  el('td', { class: 'g-code' }, p.code),
+                  el('td', {},
+                    el('a', { href: p.hasFullPlan ? 'gantt.html' : p.restricted ? 'ajustes-proyecto.html?p=AUDA' : `proyectos.html?p=${p.code}` }, p.name),
+                    p.restricted ? el('span', { class: 'badge badge-warn', style: 'margin-left:6px' }, icon('lock'), 'Restringido') : null
+                  ),
+                  el('td', {}, p.client),
+                  el('td', {}, p.team),
+                  el('td', {}, el('span', { class: `badge ${p.status === 'en_riesgo' ? 'badge-danger' : p.status === 'archivado' ? '' : 'badge-ok'}` }, statusLabel[p.status] ?? p.status)),
+                  el('td', {}, el('span', { class: `health ${p.health}` }, p.reason)),
+                  el('td', { class: 'num-col' }, `${p.progress}%`),
+                  el('td', { class: 'num-col' }, fmtShort(p.finishDate)),
+                  el('td', {}, el('span', { class: 'p-person' }, avatar(DEMO.people, p.owner, 'av-xs'), DEMO.people[p.owner]?.name ?? p.owner)),
+                  el('td', {},
+                    el('div', { style: 'display:flex;gap:4px;flex-wrap:wrap' },
+                      p.hasFullPlan
+                        ? [el('a', { class: 'btn', style: 'min-height:26px;font-size:12px', href: 'gantt.html' }, 'Gantt'), el('a', { class: 'btn', style: 'min-height:26px;font-size:12px', href: 'tabla.html' }, 'Tabla'), el('a', { class: 'btn', style: 'min-height:26px;font-size:12px', href: 'ajustes-proyecto.html' }, 'Ajustes')]
+                        : el('a', { class: 'btn', style: 'min-height:26px;font-size:12px', href: p.restricted ? 'ajustes-proyecto.html?p=AUDA' : 'gantt.html' }, p.restricted ? 'Ajustes / acceso' : 'Abrir plan')
+                    )
+                  )
+                )))
+              )
+            )
+      )
+    );
+  }
+
+  function openCreate() {
+    const form = el('form', { class: 'form-grid', id: 'f-create' },
+      el('div', { class: 'form-field' }, el('label', { for: 'cp-code' }, 'Código único'), el('input', { id: 'cp-code', type: 'text', required: true, value: 'PRV3', maxlength: 8 })),
+      el('div', { class: 'form-field' }, el('label', { for: 'cp-name' }, 'Nombre del proyecto'), el('input', { id: 'cp-name', type: 'text', required: true, placeholder: 'Ej. Renovación portal clientes' })),
+      el('div', { class: 'form-field' }, el('label', { for: 'cp-origin' }, 'Origen del plan'),
+        el('select', { id: 'cp-origin' },
+          el('option', { value: 'empty' }, 'Proyecto vacío (solo calendario)'),
+          ...TEMPLATES.map((t) => el('option', { value: t.id }, `Plantilla ${t.id} · ${t.name} (${t.version})`))
+        )
+      ),
+      el('div', { class: 'form-field' }, el('label', { for: 'cp-start' }, 'Fecha de inicio'), el('input', { id: 'cp-start', type: 'date', value: '2026-12-01', required: true })),
+      el('div', { class: 'form-field' }, el('label', { for: 'cp-cal' }, 'Calendario corporativo'),
+        el('select', { id: 'cp-cal' },
+          el('option', { value: 'Corporativo España L–V · v2 (2026-2027)' }, 'Corporativo España L–V · v2 (2026-2027)'),
+          el('option', { value: 'Soporte 24/5 turnos · v1' }, 'Soporte 24/5 turnos · v1')
+        )
+      ),
+      el('div', { class: 'form-field' }, el('label', { for: 'cp-vis' }, 'Visibilidad'),
+        el('select', { id: 'cp-vis' },
+          el('option', { value: 'standard' }, 'Estándar (organización según grants)'),
+          el('option', { value: 'restricted' }, 'Restringido (solo miembros explícitos + break-glass)')
+        )
+      ),
+      el('div', { class: 'form-field' }, el('label', { for: 'cp-owner' }, 'Propietario/a'),
+        el('select', { id: 'cp-owner' }, ...Object.entries(DEMO.people).map(([k, v]) => el('option', { value: k, selected: k === 'LF' }, `${v.name} (${v.role})`)))
+      ),
+      el('div', { class: 'form-field' }, el('label', { for: 'cp-team' }, 'Equipo'),
+        el('select', { id: 'cp-team' }, ...['Ingeniería y Producto', 'Arquitectura', 'Seguridad', 'Calidad'].map((t) => el('option', { value: t }, t)))
+      ),
+      el('div', { class: 'form-field full' },
+        el('div', { class: 'banner is-info' }, icon('info'), el('div', {}, el('strong', {}, 'Aislamiento garantizado al instanciar'), el('p', {}, 'Si partes de plantilla se remapean todos los IDs de tareas/dependencias. Nunca se copian miembros, horas reales, tarifas ni secretos.')))
+      )
+    );
+    form.addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      const code = form.querySelector('#cp-code').value.trim().toUpperCase() || 'NEW1';
+      const name = form.querySelector('#cp-name').value.trim() || 'Nuevo proyecto Asserta';
+      const vis = form.querySelector('#cp-vis').value;
+      const owner = form.querySelector('#cp-owner').value;
+      list.unshift({
+        code, name, client: 'Operaciones y Compras', team: form.querySelector('#cp-team').value,
+        owner, status: 'activo', visibility: vis, restricted: vis === 'restricted',
+        progress: 0, health: 'green', reason: 'Recién creado · revisión 1',
+        startDate: form.querySelector('#cp-start').value, finishDate: '2027-02-15',
+        calendar: form.querySelector('#cp-cal').value, hasFullPlan: true,
+      });
+      dlg.close();
+      render();
+      toast(`Proyecto ${code} «${name}» creado (simulado)`);
+    });
+
+    dlg.replaceChildren(
+      el('header', {}, el('p', { class: 'eyebrow' }, '02 Proyectos · Nuevo'), el('h2', { id: 'dlg-create-title' }, 'Crear proyecto')),
+      el('div', { class: 'm-body' }, form),
+      el('footer', {},
+        el('button', { type: 'button', class: 'btn', onclick: () => dlg.close() }, 'Cancelar'),
+        el('button', { type: 'submit', form: 'f-create', class: 'btn btn-primary' }, icon('check'), 'Crear proyecto')
+      )
+    );
+    dlg.showModal();
+  }
+
+  render();
+  if (q.get('nuevo') === '1') openCreate();
+}
+</script>
+</body>
+</html>
