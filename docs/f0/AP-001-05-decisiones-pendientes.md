@@ -27,9 +27,9 @@ Ninguna de estas decisiones está aprobada. Los «responsables propuestos» son 
 
 | P | Decisión | Propuesta técnica | Responsable propuesto | Bloquea |
 |---|---|---|---|---|
-| P-05 | Categorización ENS real del sistema y alcance de los controles | Diseñar para categoría media sin declarar cumplimiento | Responsable de seguridad | AP-005 (aprobación) |
-| P-06 | Retención de auditoría e historial, purga, residencia de datos (UE) y necesidad de evaluación de impacto | Proponer en AP-005 | DPD + Seguridad | AP-005, AP-012, AP-056 |
-| P-07 | RPO/RTO definitivos | RPO ≤24 h y RTO ≤4 h (v1.0) | IT + Seguridad | AP-058, AP-053 |
+| P-05 | Categorización ENS real del sistema y alcance de los controles | Diseñar para categoría MEDIA sin declarar cumplimiento (Anexo II RD 311/2022 cotejado en AP-005 03) | Responsable de seguridad | Base categoría: AP-006; cotejo refuerzos R1..R5 y DdA: AP-053 / piloto |
+| P-06 | Exclusión clínica, conservación diferenciada, residencia de datos (UE) y EIPD | Excluir datos clínicos e identificadores de pacientes; conservación diferenciada en AP-005 01 (`P-35`) | DPD + Seguridad | Exclusión clínica: AP-006; plazos definitivos: AP-012 / piloto |
+| P-07 | RPO/RTO definitivos | Alineados provisionalmente a RPO ≤4 h y RTO ≤8 h (`P-36`, AP-005 04) | IT + Seguridad | AP-058, AP-053 (no bloquea F0/F1) |
 | P-13 | ¿`portfolio.read` de Dirección incluye proyectos restringidos? | Sí, solo agregados y mediante concesión explícita; el contenido requiere `project.read` | Dirección + Seguridad | AP-011b, AP-034 |
 | P-15 | Break-glass: aprobadores, duración máxima, revisión periódica | Owner del proyecto o responsable de seguridad; 8 h por defecto, 72 h como máximo; revisión mensual; sin vía sin aprobador | Responsable de seguridad | AP-011b |
 | P-20 | Gates propios del piloto AP-057/AP-058 y reclasificación de AP-051/052/053/055 a P1 (CH-14) | Aprobar | Responsable técnico (+ Seguridad para el alcance de AP-057) | Backlog F1+ |
@@ -40,9 +40,9 @@ Ninguna de estas decisiones está aprobada. Los «responsables propuestos» son 
 |---|---|---|---|---|
 | P-08 | Hosting (Docker corporativo o gestionado UE), presupuesto, proxy y soporte de SSE | Decidir en ADR-001/010 con IT | IT + Dirección (presupuesto) | AP-006, AP-058 |
 | P-09 | Tenant Entra, registro de la app por entorno, assignment required, política de invitados | Single tenant, assignment required, sin invitados | IT | AP-009 |
-| P-18 | Nombre, ubicación y remoto del repositorio corporativo | `asserta-projects` (v1.0) | IT + Responsable técnico | AP-007 |
-| P-21 | Jira Cloud confirmado; identidad de la conexión; quién declara la audiencia compatible | Propietario de Jira + owner del proyecto; `linkOnly` por defecto | IT / Propietario de Jira | AP-048 |
-| P-22 | Teams: licencias de Workflows o Power Automate, identidad propietaria del flujo, canales aprobados | Flujo propiedad de una cuenta de servicio con co-owners | IT | AP-047 |
+| ~~P-18~~ | **Resuelta 2026-11-26:** repositorio corporativo confirmado en `https://github.com/Asserta-Global-Healthcare-Solutions/gantt` | — | IT + Responsable técnico | — |
+| P-21 | Jira Cloud confirmado; identidad de la conexión; quién declara la audiencia compatible | Propietario de Jira + owner del proyecto; `linkOnly` por defecto | IT / Propietario de Jira | AP-048 (no bloquea F0–F4) |
+| P-22 | Teams: autenticación restringida al tenant (PoC Service Principal: disparador Teams vs HTTP Power Automate), prohibición de `Anyone` sin aceptación expresa de riesgo, cuenta de servicio con co-owners y canales aprobados | Modo autenticado en tenant; prohibir `Anyone` por defecto (AP-005 02 §6) | IT + Seguridad | AP-046, AP-047 (no bloquea F0–F4) |
 
 ## 5. Ingeniería (responsable técnico)
 
@@ -53,12 +53,14 @@ Ninguna de estas decisiones está aprobada. Los «responsables propuestos» son 
 | P-19 | Render PDF/PNG local (navegador headless aislado) | Evaluar en ADR-009 | AP-045 |
 | ~~P-24~~ | **Resuelta 2026-11-25:** aceptada (`remainingDurationDays` + `remainingAsOf`) | — | — |
 | P-25 | Recursos gráficos corporativos de Asserta (logo, color, tipografía). **Los entrega Comunicación/Marketing**, no ingeniería | Identidad provisional en tokens hasta recibirlos | AP-002b (final) |
-| ~~P-29~~ | **Resuelta 2026-11-26:** aprobada **RF-34** (preferencias de interfaz por usuario en servidor con sincronización entre dispositivos: `user_preference`, `GET/PUT /api/v1/me/preferences`, subtarea `AP-015b`, [CH-16](AP-001-03-propuesta-v1.1.md#ch-16)) | — | — |
-| P-30 | Verificación del prototipo y del producto en Safari y Firefox (versiones aprobadas por IT) | Antes del gate F0 sobre el prototipo C; en AP-052 sobre el producto | Gate F0 (visual), AP-052 |
-| P-31 | Prueba con lector de pantalla real (NVDA y VoiceOver) del Gantt y del Inicio de C | Antes de cerrar AP-002b; en AP-052 sobre el producto | AP-002b, AP-052 |
-| P-32 | Inactividad de sesión de 30 min y máximo de 8 h; revalidación de identidad cada 15 min (AP-005 02 §4–5) | Aprobar | Seguridad + IT | AP-009 |
-| P-33 | Encadenado de hashes de auditoría por lote diario y exportación a un repositorio protegido (AP-005 02 §7) | Aprobar como objetivo v1 | Seguridad | AP-012 |
-| P-34 | Conservación: plan y auditoría 5 años, logs 90 días + 1 año, anonimización de usuarios dados de baja a los 2 años (AP-005 01 §4) | Validar con la normativa interna | DPD + Seguridad | AP-012, AP-053 |
-| P-35 | RPO de 4 h en la v1 con PITR, si la infraestructura lo permite (AP-005 04) | Decidir con el hosting | IT + Seguridad | AP-053, AP-058 |
-| P-36 | Modo de autenticación del disparador de Teams Workflows (tenant frente a «Anyone») e identidad de servicio (AP-005 02 §6) | Modo de tenant, si es viable | IT | AP-047 |
+| ~~P-29~~ | **Resuelta 2026-11-26:** aprobada y ampliada **RF-34** (modelo versionado `user_preference` + `user_view_preference`: globales, por proyecto/vista, columnas/orden, zoom de proyecto, restablecimiento y adaptación no destructiva entre viewports; ticket independiente `AP-015b`, [CH-16](AP-001-03-propuesta-v1.1.md#ch-16)) | — | — |
+| P-30 | Verificación del prototipo y del producto en Safari y Firefox (versiones aprobadas por IT) | Antes del gate F0 sobre C; en AP-052 sobre el producto | Gate F0 (visual), AP-052 |
+| P-31 | Prueba con lector de pantalla real (NVDA y VoiceOver) del Gantt y flujos críticos de C | Antes de cerrar AP-002b/F0; en AP-052 sobre el producto | Gate F0 (accesibilidad), AP-052 |
+| P-32 | Sesión opaca revocable en PostgreSQL: máximo absoluto **8 h** e inactividad **30 min** (AP-005 02 §5) | Aprobar objetivos provisionales (Seguridad + IT) | AP-009 (no bloquea F0) |
+| P-33 | Detección de bajas/deshabilitación en Entra ID (**≤ 15 min**) y consentimiento de administrador para permiso Graph **`User.Read.All` (Application)** (AP-005 02 §4) | Aprobar objetivos provisionales (Seguridad + IT) | AP-009 (no bloquea F0) |
+| P-34 | Encadenado de hashes diarios de auditoría de seguridad y exportación a repositorio protegido (AP-005 02 §7) | Aprobar como refuerzo v1 (Seguridad + IT) | AP-012 refuerzo (no bloquea F0) |
+| P-35 | Conservación diferenciada por categoría (`DA-01..19`, incluido `DA-18` RF-34 y separación `DA-10` vs `RF-33`), anonimización tras baja (`R-14`) y borrado auditado por entrada accidental sensible (`R-08`) | Validar con normativa interna (DPD + Seguridad) | AP-057 / piloto (no bloquea F0/F1) |
+| P-36 | Continuidad: **RPO ≤ 4 h**, **RTO ≤ 8 h**, PITR de PostgreSQL cuando sea viable y pruebas trimestrales con evidencias (AP-005 04) | Decidir con hosting (IT + Seguridad) | AP-058, AP-053 (no bloquea F0/F1) |
+| P-37 | Política ante indisponibilidad de Microsoft Graph en revalidación: fail-open acotado con ventana de gracia + alerta vs fail-closed estricto (AP-005 02 §4) | Opción A (fail-open acotado + alerta, manteniendo baja local inmediata) (Seguridad + IT) | AP-009 (no bloquea F0) |
+| P-38 | Selección del renderizador Gantt a partir de [AP-003](AP-003-poc-gantt.md) para `ADR-002` | Opción primaria recomendada: **Render propio virtualizado** (9,10/10); respaldo: DHTMLX Community 10.1.0 MIT (7,03/10) | **AP-006 (`ADR-002`) y Gate F0** |
 | ~~P-26~~ | **Resuelta 2026-11-25:** commits locales autorizados en las ramas de ticket; push y merge siguen sin autorizar | — | — |

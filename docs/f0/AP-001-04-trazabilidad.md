@@ -45,7 +45,7 @@ La matriz conecta cada hallazgo de la auditoría inicial (H) con su decisión (D
 | H-M16 | SSE sobre la infraestructura real | P-08 | — | CH-10 | RNF-06 | AP-029 | AT-06 | Pendiente (IT) |
 | H-M17 | Historial visible para el usuario | D-20, P-17 | E-17 | CH-09 | RF-33 (nuevo), RF-14 | AP-056 (nuevo) | AT-20 (nuevo) | Decidido (P-17 prioridad) |
 | H-M18 | Estrategia de `sortKey` | D-19 | E-22 | CH-07 | RF-04 | AP-014 | Integración DB | Propuesto |
-| DD-C09 | Preferencias de interfaz por usuario en servidor | P-29 (aprobada 2026-11-26) | — | CH-16, CH-07 | RF-34 (nuevo) | AP-015b (subtarea) | AT-24 (nuevo) | Decidido (aprobado) |
+| DD-C09 | Preferencias de interfaz por usuario en servidor (globales y por proyecto/vista) | P-29 (aprobada y ampliada 2026-11-26) | — | CH-16, CH-07 | RF-34 (nuevo) | AP-015b (independiente) | AT-24, ST-23 (nuevos) | Decidido (aprobado) |
 | H-B1 | Sponsor y responsable funcional | P-01, P-02 | E-27 | — | — | AP-001 | — | Pendiente (Dirección) |
 | H-B2 | BOM en el CSV | — | E-25 | — | — | — | — | Mantener |
 | H-B3 | Trazabilidad de AP-001 | D-19 | E-23 | CH-13 | — | AP-001 | — | Propuesto |
@@ -74,13 +74,13 @@ La matriz conecta cada hallazgo de la auditoría inicial (H) con su decisión (D
 
 | ADR | Recibe | Bloquea |
 |---|---|---|
-| ADR-001 Stack y hosting | CH-10 (Drizzle, cola), P-08 | AP-007 |
-| ADR-002 Renderer Gantt | D-11, D-21 | AP-022 |
+| ADR-001 Stack y hosting | CH-10 (Next 16.4.6 / React 19.3.1, Drizzle, cola), P-08, hallazgo `@img/sharp` | AP-007 |
+| ADR-002 Renderer Gantt | D-11, D-21, [AP-003](AP-003-poc-gantt.md), P-38 | AP-022 |
 | ADR-003 Motor temporal | D-08, D-09, D-13, D-14, CH-02, CH-03, CH-04, P-23, P-24 | AP-016..021 |
-| ADR-004 Identidad y acceso | D-07, D-15, D-16, CH-08, P-13, P-15 | AP-009, AP-011 |
+| ADR-004 Identidad y acceso | D-07, D-15, D-16, CH-08, P-09, P-13, P-15, P-32, P-33, P-37 | AP-009, AP-011 |
 | ADR-005 Recursos y costes | D-06, D-12, CH-05, CH-06, P-10, P-11, P-12 | AP-014, AP-036..041 |
-| ADR-006 Teams | P-22 | AP-047 |
+| ADR-006 Teams | P-22, AP-005 02 §6 (tenant OAuth, PoC SP) | AP-047 |
 | ADR-007 Jira | D-17, CH-11, P-21 | AP-048, AP-049 |
-| ADR-008 Datos, privacidad y ENS | P-05, P-06, P-07, CH-14 | AP-005, AP-057, AP-058 |
-| ADR-009 UX y exportación | D-10, D-22, P-14 (resuelta), P-19, P-29 (aprobada), CH-16, C · Asserta oficial | AP-002b, AP-015b, AP-045 |
+| ADR-008 Datos, privacidad y ENS | P-05, P-06, P-07, P-34, P-35, P-36, CH-14, AP-005 (`ST-01..23`) | AP-005, AP-057, AP-058 |
+| ADR-009 UX y exportación | D-10, D-22, P-14 (resuelta), P-19, P-29 (aprobada), CH-16, C · Asserta oficial, AP-002b | AP-002b, AP-015b, AP-045 |
 | ADR-010 Rendimiento y operación | H-M16, P-08 | AP-029, AP-052 |
