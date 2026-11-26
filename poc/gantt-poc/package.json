@@ -1,0 +1,27 @@
+{
+  "name": "asserta-poc-gantt-ap003",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AP-003 PoC comparativa Gantt (Frappe, SVAR, DHTMLX Community, render propio) sobre Next.js 16 y React 19",
+  "scripts": {
+    "dataset": "node dataset/generate.mjs",
+    "build": "next build",
+    "start": "next start -H 127.0.0.1 -p 4180",
+    "licenses": "node bench/audit-licenses.mjs",
+    "bench": "node bench/run-bench.mjs"
+  },
+  "dependencies": {
+    "@svar-ui/react-gantt": "2.8.3",
+    "dhtmlx-gantt": "10.1.0",
+    "frappe-gantt": "1.2.2",
+    "next": "16.4.6",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.3",
+    "@types/react": "19.1.2",
+    "@types/react-dom": "19.1.2",
+    "typescript": "5.8.3"
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "auditedAt": "2026-11-26T11:59:27.406Z",
+  "totalPackages": 60,
+  "directCount": 10,
+  "transitiveCount": 50,
+  "direct": [
+    {
+      "name": "@svar-ui/react-gantt",
+      "version": "2.8.3",
+      "license": "MIT",
+      "licenseFiles": [
+        "license.txt"
+      ],
+      "direct": true,
+      "section": "dependencies",
+      "path": "node_modules/@svar-ui/react-gantt"
+    },
+    {
+      "name": "@types/node",
+      "version": "22.15.3",
+      "license": "MIT",
+      "licenseFiles": [
+        "LICENSE"
+      ],
+      "direct": true,
+      "section": "devDependencies",
+      "path": "node_modules/@types/node"
+    },
+    {
+      "name": "@types/react",
+      "version": "19.1.2",
+      "license": "MIT",
+      "licenseFiles": [
+        "LICENSE"
+      ],
+      "direct": true,
+      "section": "devDependencies",
+      "path": "node_modules/@types/react"
+    },
+    {
+      "name": "@types/react-dom",
+      "version": "19.1.2",
+      "license": "MIT",
+      "licenseFiles": [
+        "LICENSE"
+      ],
+      "direct": true,
+      "section": "devDependencies",
+      "path": "node_modules/@types/react-dom"
+    },
+    {
+      "name": "dhtmlx-gantt",
+      "version": "10.1.0",
+      "license": "MIT",
+      "licenseFiles": [
+        "LICENSE.md"
+      ],
+      "direct": true,
+      "section": "dependencies",
+      "path": "node_modules/dhtmlx-gantt"
+    },
+    {
+      "name": "frappe-gantt",
+      "version": "1.2.2",
+      "license": "MIT",
+      "licenseFiles": [
+        "license.txt"
+      ],
+      "direct": true,
+      "section": "dependencies",
+      "path": "node_modules/frappe-gantt"
+    },
+    {
+      "name": "next",
+      "version": "16.4.6",
+      "license": "MIT",
+      "licenseFiles": [
+        "license.md"
+      ],
+      "direct": true,
+      "section": "dependencies",
+      "path": "node_modules/next"
+    },
+    {
+      "name": "react",
+      "version": "19.3.1",
+      "license": "MIT",
+      "licenseFiles": [
+        "LICENSE"
+      ],
+      "direct": true,
+      "section": "dependencies",
+      "path": "node_modules/react"
+    },
+    {
+      "name": "react-dom",
+      "version": "19.3.1",
+      "license": "MIT",
+      "licenseFiles": [
+        "LICENSE"
+      ],
+      "direct": true,
+      "section": "dependencies",
+      "path": "node_modules/react-dom"
+    },
+    {
+      "name": "typescript",
+      "version": "5.8.3",
+      "license": "Apache-2.0",
+      "licenseFiles": [
+        "LICENSE.txt"
+      ],
+      "direct": true,
+      "section": "devDependencies",
+      "path": "node_modules/typescript"
+    }
+  ],
+  "licenseBreakdown": {
+    "MIT": 49,
+    "Apache-2.0 AND LGPL-3.0-or-later": 1,
+    "Apache-2.0": 5,
+    "CC-BY-4.0": 1,
+    "ISC": 2,
+    "BSD-3-Clause": 1,
+    "0BSD": 1
+  },
+  "flaggedOrNonStandard": [
+    {
+      "name": "@img/sharp-win32-x64",
+      "version": "0.35.5",
+      "license": "Apache-2.0 AND LGPL-3.0-or-later",
+      "licenseFiles": [
+        "LICENSE"
+      ],
+      "direct": false,
+      "section": "transitive",
+      "path": "node_modules/@img/sharp-win32-x64"
+    }
+  ]
+}

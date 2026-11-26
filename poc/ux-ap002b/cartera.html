@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>07 · Cartera de proyectos — Asserta Projects</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../ux-ap002a/shared/base.css">
+<link rel="stylesheet" href="../ux-ap002a/c/c.css">
+<link rel="stylesheet" href="shared/ap002b.css">
+</head>
+<body>
+<nav id="nav"></nav>
+<main class="page-main">
+  <div id="masthead-slot"></div>
+  <div class="toolbar" id="toolbar" role="toolbar" aria-label="Filtros de cartera"></div>
+  <div class="page-scroll" id="content"></div>
+</main>
+<script type="module">
+import { el, icon, avatar, fmtShort } from '../ux-ap002a/shared/util.js';
+import { DEMO, PROJECTS, fmtEur } from './shared/data-ext.js';
+import { mountShell, makeMasthead, readItem, extendedStateBlock } from './shared/shell.js';
+
+const { role, bindNavToggle, estado } = mountShell({ navKey: 'cartera' });
+const activeProjects = PROJECTS.filter((p) => p.status !== 'archivado');
+let healthFilter = '';
+
+const { header, navBtn } = makeMasthead({
+  kickerParts: [el('span', {}, '03 Cartera')],
+  title: 'Cartera de proyectos',
+  dateline: [
+    el('span', {}, 'Indicadores deterministas con motivo explícito (sin heurísticas de IA)'),
+    el('span', {}, 'Solo se agregan proyectos autorizados al usuario (P-13)'),
+  ],
+  reads: [
+    readItem('En cartera', String(activeProjects.length)),
+    readItem('Salud roja', String(activeProjects.filter((p) => p.health === 'red').length), '', 'danger'),
+    readItem('Salud ámbar', String(activeProjects.filter((p) => p.health === 'amber').length), '', 'warn'),
+    readItem('Salud verde', String(activeProjects.filter((p) => p.health === 'green').length)),
+  ],
+});
+document.querySelector('#masthead-slot').replaceWith(header);
+bindNavToggle(navBtn);
+
+const toolbar = document.querySelector('#toolbar');
+const content = document.querySelector('#content');
+
+if (estado) {
+  toolbar.hidden = true;
+  content.replaceChildren(extendedStateBlock(estado));
+} else if (role.caps.isItAdmin) {
+  toolbar.hidden = true;
+  content.replaceChildren(extendedStateBlock('sinpermiso', {
+    sinpermisoTitle: 'Admin IT no accede a la cartera ejecutiva',
+    sinpermisoBody: 'La cartera agrega contenido de proyectos y desviaciones económicas que requieren project.read y financial.read. platform.admin no otorga estos permisos.',
+    sinpermisoActions: [{ label: 'Ir a Administración', primary: true, href: 'admin.html' }],
+  }));
+} else {
+  toolbar.replaceChildren(
+    el('div', { class: 'chips', role: 'group', 'aria-label': 'Filtrar por salud' },
+      ...[['', 'Todos'], ['red', '● Rojo'], ['amber', '◐ Ámbar'], ['green', '○ Verde']].map(([v, l]) =>
+        el('button', { type: 'button', class: 'chip', 'aria-pressed': String(v === ''), onclick: (e) => {
+          healthFilter = v;
+          for (const b of toolbar.querySelectorAll('.chip')) b.setAttribute('aria-pressed', String(b === e.currentTarget));
+          render();
+        } }, l)
+      )
+    ),
+    el('span', { class: 'sp' }),
+    el('a', { class: 'btn', href: 'recursos.html' }, icon('users'), 'Capacidad de equipos'),
+    role.caps.financialRead ? el('a', { class: 'btn', href: 'costes.html' }, icon('euro'), 'Detalle costes PPV2') : null
+  );
+
+  function render() {
+    const rows = activeProjects.filter((p) => !healthFilter || p.health === healthFilter);
+    const totalBudget = activeProjects.reduce((s, p) => s + p.budgetEur, 0);
+    const totalActual = activeProjects.reduce((s, p) => s + p.actualEur, 0);
+    const milestones = activeProjects.map((p) => ({ code: p.code, name: p.next.name, date: p.next.date, overdue: p.next.overdue, restricted: p.restricted, health: p.health })).sort((a, b) => a.date.localeCompare(b.date));
+
+    content.replaceChildren(
+      el('div', { class: 'page-stack' },
+        el('div', { class: 'figs', role: 'list', 'aria-label': 'Resumen ejecutivo de cartera' },
+          el('div', { class: 'fig', role: 'listitem' }, el('b', {}, `0${activeProjects.length}`), el('span', {}, 'proyectos visibles')),
+          el('div', { class: 'fig danger', role: 'listitem' }, el('b', {}, '01'), el('span', {}, 'hito vencido (MERP)')),
+          el('div', { class: 'fig warn', role: 'listitem' }, el('b', {}, '02'), el('span', {}, 'desviados de línea base')),
+          el('div', { class: 'fig', role: 'listitem' }, el('b', {}, `${Math.round(activeProjects.reduce((s, p) => s + p.progress, 0) / activeProjects.length)}%`), el('span', {}, 'avance medio ponderado'))
+        ),
+        el('div', { class: 'banner is-warn', role: 'note' },
+          icon('lock'),
+          el('div', {},
+            el('strong', {}, 'Visibilidad de proyectos restringidos (P-13)'),
+            el('p', {}, 'El proyecto AUDA (Auditoría interna de accesos) aparece en tu cartera porque eres su propietaria. Los usuarios sin acceso explícito no ven ni su existencia ni su aportación a totales agregados.')
+          )
+        ),
+        el('section', { 'aria-labelledby': 'h-ctbl' },
+          el('div', { class: 'sec-h' }, el('span', { class: 'n' }, '01 —'), el('h2', { id: 'h-ctbl' }, 'Tabla de cartera y estado de salud')),
+          el('div', { class: 'tbl-wrap', style: 'margin-top:12px' },
+            el('table', { class: 'dtable' },
+              el('thead', {}, el('tr', {},
+                el('th', { scope: 'col' }, 'Código'),
+                el('th', { scope: 'col' }, 'Proyecto'),
+                el('th', { scope: 'col' }, 'Salud y motivo explícito'),
+                el('th', { scope: 'col', class: 'num-col' }, 'Avance'),
+                el('th', { scope: 'col', class: 'num-col' }, 'Fin vs Línea base'),
+                role.caps.financialRead ? el('th', { scope: 'col', class: 'num-col' }, 'Real / Presupuesto') : null,
+                el('th', { scope: 'col' }, 'Propietaria')
+              )),
+              el('tbody', {}, ...rows.map((p) => el('tr', {},
+                el('td', { class: 'g-code' }, p.code),
+                el('td', {},
+                  el('a', { href: p.hasFullPlan ? 'gantt.html' : p.restricted ? 'ajustes-proyecto.html?p=AUDA' : `proyectos.html?p=${p.code}` }, p.name),
+                  p.restricted ? el('span', { class: 'badge badge-warn', style: 'margin-left:6px' }, icon('lock'), 'Restringido') : null
+                ),
+                el('td', {}, el('span', { class: `health ${p.health}` }, p.reason)),
+                el('td', { class: 'num-col' }, `${p.progress}%`),
+                el('td', { class: 'num-col' }, `${fmtShort(p.finishDate)} (LB ${fmtShort(p.baselineFinish)})`),
+                role.caps.financialRead ? el('td', { class: 'num-col' },
+                  `${fmtEur(p.actualEur)} / ${fmtEur(p.budgetEur)}`,
+                  p.incompleteCost ? el('div', {}, el('span', { class: 'badge badge-warn', style: 'margin-top:4px' }, icon('triangle-alert'), 'Coste incompleto')) : null
+                ) : null,
+                el('td', {}, el('span', { class: 'p-person' }, avatar(DEMO.people, p.owner, 'av-xs'), DEMO.people[p.owner]?.name))
+              )))
+            )
+          )
+        ),
+        el('div', { class: 'grid-2' },
+          el('section', { class: 'card', 'aria-labelledby': 'h-mstones' },
+            el('div', { class: 'card-h' }, el('h2', { id: 'h-mstones' }, 'Próximos hitos de la cartera'), el('span', { class: 'badge' }, `${milestones.length} hitos`)),
+            el('ul', { class: 'mstone' }, ...milestones.map((m) => el('li', {},
+              el('time', { datetime: m.date, class: m.overdue ? 'over' : '' }, fmtShort(m.date)),
+              el('span', { class: 'g-code' }, m.code),
+              el('span', { class: m.overdue ? 'over' : '' }, m.name, m.overdue ? ' — vencido' : '', m.restricted ? ' · restringido' : '')
+            )))
+          ),
+          el('section', { class: 'card', 'aria-labelledby': 'h-rules' },
+            el('div', { class: 'card-h' }, el('h2', { id: 'h-rules' }, 'Reglas deterministas de salud (sin IA)')),
+            el('dl', { class: 'p-dl' },
+              el('dt', {}, el('span', { class: 'health red' }, 'Rojo')), el('dd', {}, 'Hito vencido sin completar o desviación de presupuesto > 15 %.'),
+              el('dt', {}, el('span', { class: 'health amber' }, 'Ámbar')), el('dd', {}, 'Fin previsto > línea base o conflictos de planificación reconocidos.'),
+              el('dt', {}, el('span', { class: 'health green' }, 'Verde')), el('dd', {}, 'En plazo sobre línea base, sin hitos vencidos ni conflictos activos.')
+            ),
+            role.caps.financialRead
+              ? el('p', { class: 'dim', style: 'font-size:12.5px;border-top:1px solid var(--line);padding-top:10px' }, `Presupuesto agregado visible: ${fmtEur(totalBudget)} · Real imputado: ${fmtEur(totalActual)} (PPV2 marcado como coste incompleto por recurso sin tarifa).`)
+              : el('p', { class: 'dim', style: 'font-size:12.5px;border-top:1px solid var(--line);padding-top:10px' }, 'Los agregados económicos se omiten porque tu perfil actual no tiene financial.read.')
+          )
+        )
+      )
+    );
+  }
+  render();
+}
+</script>
+</body>
+</html>

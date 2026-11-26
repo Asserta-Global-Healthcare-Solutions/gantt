@@ -1,5 +1,6 @@
 # AP-005 · 02 Flujos de datos, límites de confianza y modelo de amenazas
 
+Estado: **propuesta técnica pendiente de aprobación.** La validación formal corresponde a Seguridad e IT (`P-05`, `P-09`, `P-22`). Los identificadores de activo (`DA`, `SV`) están en [01](AP-005-01-activos-datos.md); los de prueba (`ST`), en [05](AP-005-05-riesgos-pruebas.md).
 Estado: **propuesta técnica.** La validación corresponde a Seguridad (P-05). Los identificadores de activo (DA, SV) están en [01](AP-005-01-activos-datos.md); los de prueba (ST), en [05](AP-005-05-riesgos-pruebas.md).
 
 ## 1. Diagrama de flujo de datos
@@ -19,6 +20,7 @@ flowchart LR
     O[(Objetos privados SV-06)]
   end
   subgraph TB3[Límite 3 · Externos de confianza limitada]
+    ID[Entra ID / Graph SV-08]
     ID[Entra ID SV-08]
     T[Teams Workflows SV-09]
     J[Jira Cloud SV-10]

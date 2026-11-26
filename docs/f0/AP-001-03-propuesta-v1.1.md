@@ -184,7 +184,8 @@ Se suman a 04 §7. AP-004 los calcula, los verifica a mano y los firma.
 | access_request | **Nueva:** acceso excepcional (ver CH-08) |
 | external_issue | unique(`projectId, cloudId, issueId`) (E-12); **+** `audienceMode (metadata\|linkOnly)` |
 | audit_event | **+** índice (`projectId, targetType, targetId, occurredAt`) para el historial |
-| user_preference | **Nueva (CH-16, RF-34):** `userId` PK FK `user`, `theme (light\|dark)`, `density (estandar\|compacta)`, `defaultZoom (dia\|semana\|mes)`, `navCollapsed bool`, `panelMode (dock\|float\|closed)`, `panelWidthPx int CHECK (300..560)`, `taskColWidthPx int CHECK (140..420)`, `revision int`, `updatedAt`; aislamiento estricto al propio `userId` |
+| user_preference | **Nueva (CH-16, RF-34):** `userId` PK FK `user`, `schemaVersion int DEFAULT 1`, `theme (light\|dark)`, `density (estandar\|compacta)`, `defaultZoom (dia\|semana\|mes\|anio)`, `navCollapsed bool`, `panelMode (dock\|float\|closed)`, `panelWidthPx int CHECK (300..560)`, `taskColWidthPx int CHECK (140..420)`, `revision int`, `updatedAt`; aislamiento estricto al propio `userId` |
+| user_view_preference | **Nueva (CH-16, RF-34):** `id` PK, `userId` FK `user`, `projectId` FK `project` nullable, `viewKey` enum cerrado (`gantt\|table\|board\|home\|projects\|portfolio\|resources\|timesheets`), `schemaVersion int DEFAULT 1`, `zoom (dia\|semana\|mes\|anio)` nullable, `visibleColumns text[]`, `columnOrder text[]`, `revision int`, `updatedAt`; `UNIQUE(userId, COALESCE(projectId, nil-uuid), viewKey)`; catálogo cerrado de columnas por vista (sin almacén KV arbitrario) |
 
 ## CH-08
 **Autorización con alcance (D-07, D-16).**
@@ -318,24 +319,36 @@ CHECK (principalType <> 'user' OR principalId <> grantedBy)   -- sin autoasignac
 - **AT-21.** Un admin no puede concederse acceso a un proyecto restringido. El break-glass aprobado por un tercero caduca a su hora y queda auditado.
 - **AT-22.** Crear asignaciones no modifica el esfuerzo estimado. Planificado y real se calculan aparte y cuadran con los fixtures.
 - **AT-23.** La suite dorada del motor da resultados idénticos en Node y en Chromium headless.
-- **AT-24 (RF-34).** Un usuario cambia tema, densidad, zoom, plegado de navegación y distribución de panel/tabla; al iniciar sesión en otro navegador o dispositivo recupera las mismas preferencias desde servidor; valores fuera de rango devuelven 400; ningún otro usuario (incluido `platform.admin`) puede leerlas o modificarlas.
+- **AT-24 (RF-34).** Un usuario cambia preferencias globales (tema, densidad, zoom por defecto, navegación, panel/tabla) y específicas de proyecto/vista (zoom del proyecto, columnas visibles y orden); al abrir sesión en otro dispositivo/resolución (1920/1280/390 px) recupera las preferencias y la vista se adapta al viewport real sin sobrescribir la preferencia persistida; restablecer preferencias devuelve los valores por defecto de C en todos los dispositivos; valores/columnas arbitrarias o `schemaVersion` inválida devuelven `400`; un proyecto sin acceso devuelve `404`; ningún otro usuario (incluido `platform.admin`) puede leerlas o modificarlas.
 
 ## CH-16
-**Preferencias de interfaz por usuario en el servidor (RF-34, P-29 aprobada 2026-11-26).**
+**Preferencias de interfaz por usuario en el servidor (RF-34, P-29 aprobada y ampliada el 2026-11-26).**
 
-- **Requisito nuevo — RF-34 (P1):** persistencia en servidor de preferencias de interfaz por usuario autenticado, sincronizadas entre dispositivos y sesiones.
-  - **Campos incluidos:** `theme` (`light|dark`, defecto `light`), `density` (`estandar|compacta`, defecto `estandar`), `defaultZoom` (`dia|semana|mes`, defecto `dia`), `navCollapsed` (`boolean`, defecto `false`), `panelMode` (`dock|float|closed`, defecto `dock`), `panelWidthPx` (entero `300..560`, defecto `340`), `taskColWidthPx` (entero `140..420`, defecto `220`).
-  - **Fuente de verdad y sincronización:** el servidor es la fuente de verdad entre dispositivos. El cliente puede mantener una caché local no sensible para evitar parpadeos al cargar, pero reconcilia con `GET /api/v1/me/preferences` al autenticar o recuperar sesión. Los parámetros de URL sobrescriben únicamente la sesión visual actual y no se persisten.
-- **Modelo de datos (`05`, `user_preference`):** relación 1:1 con `user` (`userId` PK FK `user`, `ON DELETE RESTRICT` o archivado según política de baja), checks de dominio/rango en BD, `revision int` y `updatedAt` UTC. No almacena secretos, permisos ni datos de proyectos.
+- **Requisito nuevo — RF-34 (P1):** persistencia en servidor de preferencias de interfaz versionadas y validadas por usuario autenticado, sincronizadas entre dispositivos y sesiones, cubriendo preferencias globales, por proyecto y por vista.
+  - **Preferencias globales (`user_preference`, `schemaVersion = 1`):** `theme` (`light|dark`, defecto `light`), `density` (`estandar|compacta`, defecto `estandar`), `defaultZoom` (`dia|semana|mes|anio`, defecto `dia`), `navCollapsed` (`boolean`, defecto `false`), `panelMode` (`dock|float|closed`, defecto `dock`), `panelWidthPx` (entero `300..560`, defecto `340`), `taskColWidthPx` (entero `140..420`, defecto `220`).
+  - **Preferencias por proyecto y por vista (`user_view_preference`, `schemaVersion = 1`):** clave cerrada `(userId, projectId?, viewKey)` donde `viewKey ∈ {gantt, table, board, home, projects, portfolio, resources, timesheets}`:
+    - `zoom` específico del proyecto/vista (`dia|semana|mes|anio` o `null` para heredar `defaultZoom`);
+    - `visibleColumns` y `columnOrder`: arrays validados contra el catálogo cerrado de columnas permitidas para cada `viewKey` (sin duplicados, mínimo 1 columna obligatoria y filtrando columnas económicas si falta `financial.read`).
+  - **Prohibición de almacén arbitrario:** esquema estrictamente tipado y versionado (`schemaVersion`); no se permite guardar pares clave-valor libres, filtros arbitrarios sin tipar, secretos, permisos ni datos de negocio. Las migraciones de esquema de preferencias se resuelven en servidor con reglas explícitas por `schemaVersion`.
+  - **Adaptación a distintos tamaños de pantalla:** el cliente interpreta las preferencias persistidas como **intención del usuario** y las adapta al viewport real (`ResizeObserver`, `MIN_LANE = 480 px`, modo móvil `< 760 px`) **sin sobrescribir la preferencia guardada en servidor** (abrir en 1280 px o 390 px no destruye el `dock` configurado en 1920 px).
+  - **Restablecimiento:** el usuario puede restablecer preferencias a los valores oficiales por defecto de C · Asserta por ámbito (`global`, `view`, `project` o `all`), propagándose a todos sus dispositivos.
+  - **Fuente de verdad y sincronización:** el servidor es la fuente de verdad. El cliente puede usar caché local no sensible para evitar parpadeos al cargar, pero reconcilia con `GET /api/v1/me/preferences` al autenticar o recuperar sesión. Los parámetros de URL sobrescriben únicamente la sesión visual actual y no se persisten.
+- **Modelo de datos (`05`):**
+  - `user_preference`: relación 1:1 con `user` (`userId` PK FK `user`, `ON DELETE RESTRICT` o archivado según política de baja), `schemaVersion`, checks de dominio/rango en BD, `revision int`, `updatedAt` UTC.
+  - `user_view_preference`: relación N:1 con `user` y opcional con `project` (`ON DELETE CASCADE` si se purga proyecto), `UNIQUE(userId, COALESCE(projectId, nil-uuid), viewKey)`, `schemaVersion`, checks de enum/catálogo, `revision int`, `updatedAt` UTC.
 - **API (`03`, `/api/v1`):**
-  - `GET /api/v1/me/preferences`: devuelve las preferencias persistidas o los valores por defecto oficiales de C · Asserta si aún no existe fila.
-  - `PUT /api/v1/me/preferences` (o `PATCH` idempotente): valida con Zod estricto (rechaza campos desconocidos y rangos inválidos con `400`), deriva `userId` exclusivamente de la sesión server-side (nunca del cuerpo ni de la ruta) y actualiza en transacción.
-- **Seguridad y privacidad:** aislamiento estricto por `userId`; un usuario nunca puede leer ni modificar las preferencias de otro (ni siquiera `platform.admin`). Sin datos personales adicionales ni datos sensibles.
+  - `GET /api/v1/me/preferences`: devuelve preferencias globales y overrides por vista/proyecto (excluyendo silenciosamente cualquier `projectId` al que el usuario haya perdido acceso) o los valores por defecto oficiales de C · Asserta.
+  - `PUT /api/v1/me/preferences`: actualiza preferencias globales con Zod `.strict()` y `schemaVersion` validada; deriva `userId` exclusivamente de la sesión server-side.
+  - `PUT /api/v1/me/preferences/views/:viewKey` y `PUT /api/v1/me/preferences/projects/:projectId/views/:viewKey`: valida `viewKey`, catálogo de columnas, `zoom`, `schemaVersion` y autorización vigente sobre `:projectId` (`404` si inaccesible).
+  - `POST /api/v1/me/preferences/reset`: restablece según `scope` (`global|view|project|all`) en transacción y devuelve el estado normalizado.
+- **Seguridad y privacidad:** aislamiento estricto por `userId`; un usuario nunca puede leer, modificar ni restablecer preferencias ajenas (ni siquiera `platform.admin`). Revocar el acceso a un proyecto impide leer o mutar sus preferencias asociadas (`404`). Sin datos personales adicionales ni datos sensibles.
 - **Criterios de aceptación (RF-34):**
-  1. Guardar cualquier preferencia contemplada persiste en `user_preference` y devuelve el estado normalizado.
-  2. Abrir sesión con el mismo usuario en otro navegador o dispositivo aplica las mismas preferencias automáticamente.
-  3. Un usuario sin fila previa recibe los valores por defecto de la Dirección C (`light`, `estandar`, `dia`, navegación abierta, `dock`, `340`, `220`).
-  4. Cargas con valores fuera de enum/rango o campos extra devuelven `400` sin mutar estado.
-  5. Peticiones no autenticadas devuelven `401`; ningún parámetro permite leer o escribir preferencias ajenas.
-  6. Un fallo de red al guardar notifica error recuperable sin corromper la vista activa.
-- **Impacto en backlog (`06`):** `AP-015` se desglosa en `AP-015a` (P0: shell web e inicio personal) y `AP-015b` (P1, S: tabla `user_preference`, endpoints `GET/PUT /api/v1/me/preferences`, sincronización entre dispositivos y pruebas positivas/negativas AT-24).
+  1. Guardar preferencias globales o por proyecto/vista (zoom específico, columnas visibles y orden) persiste en `user_preference` / `user_view_preference` con `schemaVersion` y devuelve el estado normalizado.
+  2. Abrir sesión con el mismo usuario en otro navegador o dispositivo aplica las mismas preferencias globales y de proyecto/vista automáticamente.
+  3. Cambiar a un viewport menor (p. ej. 1280 px o móvil 390 px) adapta la disposición localmente (auto-flotante o lista móvil) sin sobrescribir las preferencias persistidas en servidor.
+  4. Restablecer preferencias (por vista, por proyecto o globalmente) limpia/restaura los valores oficiales de Dirección C y se refleja en otros dispositivos.
+  5. Un usuario sin fila previa recibe los valores por defecto de la Dirección C (`light`, `estandar`, `dia`, navegación abierta, `dock`, `340`, `220`, columnas estándar por vista).
+  6. Cargas con valores fuera de enum/rango, columnas inexistentes/duplicadas, campos extra o `schemaVersion` no soportada devuelven `400` sin mutar estado.
+  7. Peticiones no autenticadas devuelven `401`; acceder o escribir preferencias de un proyecto sin permiso devuelve `404`; ningún parámetro permite leer o escribir preferencias de otro usuario (incluido `platform.admin`).
+  8. Un fallo de red al guardar o restablecer notifica error recuperable sin corromper la vista activa.
+- **Impacto en backlog (`06`):** `AP-015b` se mantiene como ticket independiente (`P1, S/M`): tablas `user_preference` y `user_view_preference` versionadas, endpoints `GET/PUT/reset` bajo `/api/v1/me/preferences`, catálogo cerrado de columnas por vista, adaptación no destructiva entre viewports, sincronización entre dispositivos y pruebas positivas/negativas `AT-24` / `ST-23`.

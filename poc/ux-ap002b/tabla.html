@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>04 · Tabla de tareas — PPV2 · Asserta Projects</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../ux-ap002a/shared/base.css">
+<link rel="stylesheet" href="../ux-ap002a/c/c.css">
+<link rel="stylesheet" href="shared/ap002b.css">
+</head>
+<body>
+<nav id="nav"></nav>
+<main class="page-main">
+  <div id="masthead-slot"></div>
+  <div class="toolbar" id="toolbar" role="toolbar" aria-label="Filtros y columnas de la tabla"></div>
+  <div class="page-scroll" id="content"></div>
+</main>
+<script type="module">
+import { el, icon, avatar, fmtShort, signed } from '../ux-ap002a/shared/util.js';
+import { DEMO, RATES, TASK_EXT, fmtEur } from './shared/data-ext.js';
+import { mountShell, makeMasthead, projectTabs, readItem, statusBadge, extendedStateBlock, DEFAULT_PREFS } from './shared/shell.js';
+
+const { role, prefs, bindNavToggle, toast, estado } = mountShell({ navKey: 'tabla', projectCode: 'PPV2' });
+let revision = DEMO.project.revision;
+const meta = structuredClone(DEMO.meta);
+const plan = structuredClone(DEMO.plan);
+
+const { header, navBtn } = makeMasthead({
+  kickerParts: [el('a', { href: 'proyectos.html' }, '02 Proyectos'), el('span', {}, '/'), el('span', {}, 'PPV2')],
+  tabs: projectTabs('tabla', 'PPV2'),
+  title: 'Tabla de tareas · PPV2',
+  dateline: [
+    el('span', {}, `Revisión ${revision} · 25 nodos WBS`),
+    el('span', {}, 'Edición inline sincronizada con el motor del servidor'),
+    el('span', {}, role.caps.financialRead ? 'Permiso financial.read activo (columnas económicas visibles)' : 'Sin financial.read (columnas económicas omitidas en servidor)'),
+  ],
+  reads: [
+    readItem('Tareas', '18', '', '', '16 tareas + 2 hitos sobre el mismo plan que el Gantt.'),
+    readItem('Conflictos', String(plan.conflicts.length), '', 'danger', 'Tarea 3.3 en conflicto d13 (FS desde 3.2.2).'),
+    readItem('Revisión', String(revision), '', '', 'Sincronizada con el Gantt.'),
+  ],
+});
+document.querySelector('#masthead-slot').replaceWith(header);
+bindNavToggle(navBtn);
+
+const toolbar = document.querySelector('#toolbar');
+const content = document.querySelector('#content');
+
+if (estado) {
+  toolbar.hidden = true;
+  content.replaceChildren(extendedStateBlock(estado));
+} else if (!role.caps.projectRead) {
+  toolbar.hidden = true;
+  content.replaceChildren(extendedStateBlock('sinpermiso', {
+    sinpermisoTitle: 'Admin IT no tiene acceso a la tabla de tareas de PPV2',
+    sinpermisoBody: 'platform.admin no concede project.read. Cambia el rol simulado a Jefa de proyecto o Miembro para evaluar esta vista.',
+    sinpermisoActions: [{ label: 'Ir a Administración', primary: true, href: 'admin.html' }],
+  }));
+} else {
+  const ALL_COLS = [
+    { key: 'code', label: 'Nº WBS', locked: true },
+    { key: 'name', label: 'Tarea', locked: true },
+    { key: 'status', label: 'Estado' },
+    { key: 'resp', label: 'Responsable' },
+    { key: 'start', label: 'Inicio' },
+    { key: 'finish', label: 'Fin' },
+    { key: 'float', label: 'Holgura' },
+    { key: 'prog', label: 'Progreso' },
+    { key: 'effort', label: 'Esfuerzo est.' },
+    { key: 'costEst', label: 'Coste est.', financial: true },
+    { key: 'costReal', label: 'Coste real', financial: true },
+  ].filter((c) => !c.financial || role.caps.financialRead);
+
+  const validKeys = new Set(ALL_COLS.map((c) => c.key));
+  let colOrder = prefs.data.tableColumns.order.filter((k) => validKeys.has(k));
+  for (const c of ALL_COLS) if (!colOrder.includes(c.key)) colOrder.push(c.key);
+  let colVisible = new Set(prefs.data.tableColumns.visible.filter((k) => validKeys.has(k)));
+  colVisible.add('code'); colVisible.add('name');
+
+  const filter = { q: '', resp: '', status: '' };
+  let pickerOpen = false;
+
+  const qIn = el('input', { type: 'search', placeholder: 'Filtrar tarea…', 'aria-label': 'Filtrar por texto', oninput: (e) => { filter.q = e.target.value; render(); } });
+  const selResp = el('select', { 'aria-label': 'Responsable', onchange: (e) => { filter.resp = e.target.value; render(); } },
+    el('option', { value: '' }, 'Todas las personas'),
+    ...Object.entries(DEMO.people).map(([k, p]) => el('option', { value: k }, p.name))
+  );
+  const selSt = el('select', { 'aria-label': 'Estado', onchange: (e) => { filter.status = e.target.value; render(); } },
+    el('option', { value: '' }, 'Todos los estados'),
+    el('option', { value: 'pendiente' }, 'Pendiente'),
+    el('option', { value: 'en_curso' }, 'En curso'),
+    el('option', { value: 'bloqueada' }, 'Bloqueada'),
+    el('option', { value: 'completada' }, 'Completada')
+  );
+  const fnote = el('span', { class: 'fnote', 'aria-live': 'polite' });
+  const colBtn = el('button', { type: 'button', class: 'btn', 'aria-expanded': 'false', onclick: () => { pickerOpen = !pickerOpen; colBtn.setAttribute('aria-expanded', String(pickerOpen)); render(); } }, icon('columns-3'), 'Columnas (RF-34)');
+  const resetBtn = el('button', { type: 'button', class: 'btn', onclick: () => {
+    colOrder = DEFAULT_PREFS.tableColumns.order.filter((k) => validKeys.has(k));
+    colVisible = new Set(DEFAULT_PREFS.tableColumns.visible.filter((k) => validKeys.has(k)));
+    prefs.save({ tableColumns: { visible: [...colVisible], order: [...colOrder] } });
+    toast('Vista de columnas RF-34 restablecida');
+    render();
+  } }, icon('rotate-cw'), 'Restablecer vista');
+
+  toolbar.replaceChildren(
+    el('label', { class: 'field' }, icon('search'), qIn),
+    el('label', { class: 'field' }, icon('users'), selResp),
+    el('label', { class: 'field' }, selSt),
+    fnote,
+    el('span', { class: 'sp' }),
+    colBtn,
+    resetBtn
+  );
+
+  function saveCols() {
+    prefs.save({ tableColumns: { visible: [...colVisible], order: [...colOrder] } });
+  }
+
+  function costInfo(id) {
+    const m = meta[id], ext = TASK_EXT[id];
+    if (m.kind !== 'task') return { est: '—', real: '—' };
+    const r = RATES[m.responsible];
+    if (!r || r.eurHour == null) {
+      return {
+        est: el('span', { class: 'badge badge-warn', 'data-tip': 'Sin tarifa vigente para este recurso (P-11: nunca 0 € ficticio)' }, icon('triangle-alert'), 'Sin tarifa'),
+        real: '—',
+      };
+    }
+    return {
+      est: fmtEur((m.effort / 60) * r.eurHour),
+      real: fmtEur((ext?.actualHours ?? 0) * r.eurHour),
+    };
+  }
+
+  function renderCell(key, id) {
+    const m = meta[id], t = plan.tasks[id], isGroup = m.kind === 'group';
+    const hasConf = plan.conflicts.some((c) => c.successorId === id);
+    const costs = costInfo(id);
+    switch (key) {
+      case 'code':
+        return el('td', { class: 'g-code' }, id);
+      case 'name': {
+        const lvl = id.split('.').length;
+        return el('td', {},
+          el('div', { style: `display:flex;align-items:center;gap:6px;padding-left:${(lvl - 1) * 14}px` },
+            m.kind === 'milestone' ? icon('diamond') : null,
+            isGroup
+              ? el('span', {}, m.name)
+              : el('a', { href: `tarea.html?task=${id}` }, m.name),
+            t.class === 'MANUAL' ? el('span', { class: 'tag tag-manual' }, 'M') : null,
+            hasConf ? el('a', { class: 'tag tag-conf', href: `gantt.html?task=${id}`, title: 'Ver conflicto en Gantt' }, icon('triangle-alert'), 'Conflicto d13') : null
+          )
+        );
+      }
+      case 'status':
+        if (isGroup) return el('td', { class: 'dim' }, 'Derivado');
+        if (!role.caps.projectWrite) return el('td', {}, statusBadge(m.status));
+        return el('td', {}, el('select', {
+          class: 'inline-edit',
+          'aria-label': `Estado de ${id} ${m.name}`,
+          onchange: (e) => { m.status = e.target.value; revision += 1; toast(`${id} actualizada a «${e.target.selectedOptions[0].textContent}» · rev. ${revision}`); render(); },
+        }, ...[['pendiente', 'Pendiente'], ['en_curso', 'En curso'], ['bloqueada', 'Bloqueada'], ['completada', 'Completada']].map(([v, l]) => el('option', { value: v, selected: m.status === v }, l))));
+      case 'resp':
+        return el('td', {}, isGroup ? '—' : el('span', { class: 'p-person' }, avatar(DEMO.people, m.responsible, 'av-xs'), DEMO.people[m.responsible]?.name ?? '—'));
+      case 'start':
+        return el('td', { class: 'num-col' }, fmtShort(t.start));
+      case 'finish':
+        return el('td', { class: 'num-col' }, fmtShort(t.finish));
+      case 'float':
+        if (isGroup || t.totalFloat == null) return el('td', { class: 'num-col dim' }, '—');
+        return el('td', { class: 'num-col' }, el('span', { class: `fl ${t.totalFloat < 0 ? 'neg' : t.totalFloat === 0 ? 'zero' : 'pos'}` }, `${signed(t.totalFloat)} d`));
+      case 'prog':
+        if (isGroup || m.kind === 'milestone') return el('td', { class: 'num-col' }, `${t.progress ?? 0}%`);
+        if (!role.caps.projectWrite) return el('td', { class: 'num-col' }, `${t.progress ?? 0}%`);
+        return el('td', { class: 'num-col' }, el('input', {
+          class: 'ts-input', type: 'number', min: 0, max: 100, step: 5, value: t.progress ?? 0,
+          'aria-label': `Progreso porcentual de ${id}`,
+          onchange: (e) => { t.progress = Math.max(0, Math.min(100, Number(e.target.value) || 0)); toast(`Progreso de ${id} guardado: ${t.progress}% (simulado)`); render(); },
+        }));
+      case 'effort':
+        return el('td', { class: 'num-col' }, m.effort ? `${m.effort / 60} h` : '—');
+      case 'costEst':
+        return el('td', { class: 'num-col' }, costs.est);
+      case 'costReal':
+        return el('td', { class: 'num-col' }, costs.real);
+      default:
+        return el('td', {}, '—');
+    }
+  }
+
+  function renderPicker() {
+    const metaByKey = Object.fromEntries(ALL_COLS.map((c) => [c.key, c]));
+    return el('section', { class: 'col-picker', hidden: !pickerOpen, 'aria-label': 'Configuración de columnas visibles y orden' },
+      el('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:8px' },
+        el('strong', {}, 'Columnas visibles y orden (user_view_preference · RF-34)'),
+        el('span', { class: 'dim', style: 'font-size:12px' }, role.caps.financialRead ? 'Catálogo cerrado con columnas económicas' : 'Columnas económicas no disponibles sin financial.read')
+      ),
+      el('div', { class: 'col-list' }, ...colOrder.map((k, idx) => {
+        const c = metaByKey[k];
+        return el('div', { class: 'col-item' },
+          el('label', { class: 'form-check' },
+            el('input', { type: 'checkbox', checked: colVisible.has(k), disabled: c.locked, onchange: (e) => { e.target.checked ? colVisible.add(k) : colVisible.delete(k); saveCols(); render(); } }),
+            c.label,
+            c.financial ? el('span', { class: 'badge badge-brand' }, 'financial.read') : null
+          ),
+          el('span', { class: 'sp' }),
+          el('button', { type: 'button', class: 'icon-btn', disabled: idx === 0, 'aria-label': `Subir columna ${c.label}`, onclick: () => { [colOrder[idx - 1], colOrder[idx]] = [colOrder[idx], colOrder[idx - 1]]; saveCols(); render(); } }, icon('arrow-up')),
+          el('button', { type: 'button', class: 'icon-btn', disabled: idx === colOrder.length - 1, 'aria-label': `Bajar columna ${c.label}`, onclick: () => { [colOrder[idx + 1], colOrder[idx]] = [colOrder[idx], colOrder[idx + 1]]; saveCols(); render(); } }, icon('arrow-down'))
+        );
+      }))
+    );
+  }
+
+  function render() {
+    const activeFilter = Boolean(filter.q || filter.resp || filter.status);
+    fnote.textContent = activeFilter ? 'Filtro activo · el plan no cambia' : '';
+    const activeCols = colOrder.filter((k) => colVisible.has(k));
+    const colLabels = Object.fromEntries(ALL_COLS.map((c) => [c.key, c.label]));
+
+    const visibleIds = DEMO.order.filter((id) => {
+      const m = meta[id];
+      if (!activeFilter) return true;
+      if (m.kind === 'group') return false;
+      if (filter.q && !`${id} ${m.name}`.toLowerCase().includes(filter.q.toLowerCase())) return false;
+      if (filter.resp && m.responsible !== filter.resp && !m.collaborators.includes(filter.resp)) return false;
+      if (filter.status && m.status !== filter.status) return false;
+      return true;
+    });
+
+    content.replaceChildren(
+      el('div', { class: 'page-stack' },
+        !role.caps.financialRead
+          ? el('div', { class: 'banner is-info' }, icon('lock'), el('div', {}, el('strong', {}, 'Columnas económicas ocultas por servidor'), el('p', {}, 'El perfil Miembro no dispone de financial.read. Las columnas Coste est. y Coste real no se renderizan ni aparecen en el selector.')))
+          : null,
+        renderPicker(),
+        el('div', { class: 'tbl-wrap' },
+          el('table', { class: 'dtable' },
+            el('thead', {}, el('tr', {}, ...activeCols.map((k) => el('th', { scope: 'col', class: ['start', 'finish', 'float', 'prog', 'effort', 'costEst', 'costReal'].includes(k) ? 'num-col' : '' }, colLabels[k])))),
+            el('tbody', {}, ...visibleIds.map((id) => el('tr', { class: meta[id].kind === 'group' ? 'is-group' : '', 'data-status': meta[id].status }, ...activeCols.map((k) => renderCell(k, id)))))
+          )
+        )
+      )
+    );
+  }
+  render();
+}
+</script>
+</body>
+</html>

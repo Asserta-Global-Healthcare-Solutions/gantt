@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AP-002b · Galería de las 17 pantallas y 7 recorridos — C · Asserta</title>
+<style>
+  :root { --bg: #f4f1ea; --surface: #faf8f3; --text: #141413; --text-2: #4d4a43; --line: #d9d4c7; --line-s: #c2bba9; --brand: #1f5c63; color-scheme: light; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #121211; --surface: #181816; --text: #ece8de; --text-2: #b9b4a7; --line: #2e2c27; --line-s: #3f3c35; --brand: #6fb6bc; color-scheme: dark; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 system-ui, sans-serif; }
+  header { position: sticky; top: 0; z-index: 2; background: var(--bg); border-bottom: 3px double var(--line-s); padding: 14px 20px; display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: end; }
+  h1 { font-size: 20px; margin: 0; letter-spacing: -.02em; }
+  header p { margin: 2px 0 0; color: var(--text-2); font-size: 13px; }
+  .ctl { display: grid; gap: 3px; font: 500 11px/1 ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--text-2); }
+  select { font: 14px system-ui; padding: 5px 8px; border: 1px solid var(--line-s); border-radius: 3px; background: var(--surface); color: var(--text); min-height: 32px; }
+  main { padding: 18px 20px 56px; display: grid; gap: 32px; max-width: 1600px; margin: 0 auto; }
+  h2 { font-size: 17px; margin: 0 0 12px; border-bottom: 1px solid var(--text); padding-bottom: 6px; display: flex; justify-content: space-between; align-items: baseline; }
+  h2 small { font: 500 11px/1 ui-monospace, monospace; color: var(--text-2); text-transform: uppercase; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 18px; }
+  figure { margin: 0; display: grid; gap: 6px; }
+  figcaption { font: 500 12px/1.3 ui-monospace, monospace; color: var(--text-2); display: flex; justify-content: space-between; gap: 8px; }
+  figcaption b { color: var(--text); font-family: system-ui; font-size: 14px; }
+  a.shot { display: block; border: 1px solid var(--line); border-radius: 3px; overflow: hidden; background: var(--surface); }
+  img { display: block; width: 100%; height: auto; }
+  .tours { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+  .tour { border: 1px solid var(--line); border-radius: 3px; background: var(--surface); padding: 12px 14px; }
+  .tour h3 { margin: 0 0 4px; font-size: 14px; color: var(--brand); }
+  .tour p { margin: 0; font-size: 12.5px; color: var(--text-2); }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>AP-002b · Galería completa — Sistema C · Asserta</h1>
+    <p>17 pantallas obligatorias + mapa interactivo, 7 recorridos, claro/oscuro, multiresolución, 7 estados y RBAC. Haz clic en cualquier captura para abrirla a tamaño real.</p>
+  </div>
+  <label class="ctl">Tema pantallas
+    <select id="theme">
+      <option value="light" selected>Claro (defecto C)</option>
+      <option value="dark">Oscuro</option>
+      <option value="both">Claro y Oscuro juntos</option>
+    </select>
+  </label>
+  <label class="ctl">Filtrar por recorrido
+    <select id="tour">
+      <option value="all" selected>Todas las pantallas (17 + mapa)</option>
+      <option value="1">01 · Creación de proyecto</option>
+      <option value="2">02 · Planificación y reprogramación</option>
+      <option value="3">03 · Ejecución de tareas</option>
+      <option value="4">04 · Gestión de recursos</option>
+      <option value="5">05 · Registro de horas</option>
+      <option value="6">06 · Seguimiento económico</option>
+      <option value="7">07 · Administración y permisos</option>
+    </select>
+  </label>
+</header>
+<main>
+  <section aria-labelledby="h-tours">
+    <h2 id="h-tours">Los 7 recorridos interactivos <small>Verificados con Playwright</small></h2>
+    <div class="tours" id="tours-list"></div>
+  </section>
+  <section aria-labelledby="h-screens">
+    <h2 id="h-screens">Las 17 pantallas + Mapa <small id="screens-note">1440 px</small></h2>
+    <div class="grid" id="screens-grid"></div>
+  </section>
+  <section aria-labelledby="h-flows">
+    <h2 id="h-flows">RBAC y flujos interactivos clave <small>Permisos, impactos y validaciones</small></h2>
+    <div class="grid" id="flows-grid"></div>
+  </section>
+  <section aria-labelledby="h-vp">
+    <h2 id="h-vp">Multiresolución (1280, 1920 y móvil 390 px) <small>Espacio real y adaptación móvil</small></h2>
+    <div class="grid" id="vp-grid"></div>
+  </section>
+  <section aria-labelledby="h-states">
+    <h2 id="h-states">Los 7 estados obligatorios de interfaz <small>?estado=...</small></h2>
+    <div class="grid" id="states-grid"></div>
+  </section>
+</main>
+<script>
+  const DIR = 'assets/ap-002b/';
+  const SCREENS = [{"slug":"00-mapa","title":"00 · Mapa y 7 recorridos"},{"slug":"01-inicio","title":"01 · Inicio"},{"slug":"02-proyectos","title":"02 · Listado de proyectos"},{"slug":"03-gantt","title":"03 · Gantt (PPV2)"},{"slug":"04-tabla","title":"04 · Tabla de tareas (PPV2)"},{"slug":"05-kanban","title":"05 · Kanban (PPV2)"},{"slug":"06-tarea","title":"06 · Detalle de tarea (PPV2)"},{"slug":"07-cartera","title":"07 · Cartera de proyectos"},{"slug":"08-recursos","title":"08 · Recursos y capacidad"},{"slug":"09-horas","title":"09 · Registro de horas"},{"slug":"10-costes","title":"10 · Costes y presupuestos"},{"slug":"11-plantillas","title":"11 · Plantillas"},{"slug":"12-notificaciones","title":"12 · Notificaciones y RF-34"},{"slug":"13-import-export","title":"13 · Importación y exportación"},{"slug":"14-ajustes-proyecto","title":"14 · Configuración de proyectos"},{"slug":"15-admin","title":"15 · Administración"},{"slug":"16-auditoria","title":"16 · Auditoría de seguridad"},{"slug":"17-integraciones","title":"17 · Integraciones Teams y Jira"}];
+  const TOUR_SLUGS = {
+    1: ['11-plantillas', '02-proyectos', '14-ajustes-proyecto'],
+    2: ['03-gantt', '04-tabla', '13-import-export'],
+    3: ['01-inicio', '05-kanban', '06-tarea', '12-notificaciones'],
+    4: ['07-cartera', '08-recursos'],
+    5: ['09-horas', '06-tarea'],
+    6: ['10-costes', '04-tabla', '06-tarea'],
+    7: ['15-admin', '16-auditoria', '17-integraciones', '14-ajustes-proyecto'],
+  };
+  const TOURS = [{"id":1,"title":"Creación de proyecto","goal":"Elegir una plantilla versionada, revisar que no copia miembros/horas/costes, instanciar o crear un proyecto y revisar su calendario y visibilidad.","steps":["Plantillas","Listado de proyectos","Ajustes del proyecto"]},{"id":2,"title":"Planificación y reprogramación","goal":"Arrastrar o desplazar una tarea en el Gantt con vista previa, confirmar el diálogo de impacto, ajustar columnas en Tabla e importar datos con validación.","steps":["Gantt","Tabla de tareas","Import / Export"]},{"id":3,"title":"Ejecución de tareas","goal":"Revisar la agenda en Inicio, mover una tarjeta en Kanban con impacto en sucesoras, consultar comentarios/historial en Detalle y gestionar notificaciones.","steps":["Inicio","Kanban","Detalle de tarea","Notificaciones"]},{"id":4,"title":"Gestión de recursos","goal":"Detectar sobrecargas (> 8 h/día) sin reprogramar fechas, revisar ausencias sin motivo médico y comprobar la redacción de proyectos restringidos.","steps":["Cartera","Recursos y capacidad"]},{"id":5,"title":"Registro de horas","goal":"Imputar minutos positivos en la hoja semanal, enviarla, aprobar o reabrir con motivo explícito y verificar que no es fichaje laboral.","steps":["Registro de horas","Detalle · Horas"]},{"id":6,"title":"Seguimiento económico","goal":"Revisar tarifas congeladas, desviación presupuestaria, el indicador «Coste incompleto (sin tarifa)» y la ocultación estricta al cambiar de rol.","steps":["Costes y presupuestos","Tabla (columnas económicas)","Detalle · Historial RF-33"]},{"id":7,"title":"Administración y permisos","goal":"Gestionar usuarios Entra ID, revocar sesiones, aplicar grants sin autoasignación, auditar eventos append-only y configurar Teams/Jira.","steps":["Administración","Auditoría de seguridad","Integraciones","Ajustes · Break-glass"]}];
+  const FLOWS = [
+    ['rbac-costes-miembro.jpg', 'Costes · Miembro sin financial.read', 'sinpermiso sin cifras EUR'],
+    ['rbac-tabla-miembro.jpg', 'Tabla · Miembro sin financial.read', 'columnas económicas omitidas'],
+    ['rbac-admin-autoasignacion.jpg', 'Admin IT · Autoasignación bloqueada', 'ADR-003 DENY'],
+    ['flujo-gantt-conflicto.jpg', 'Gantt · Diálogo impacto + conflicto', 'confirmar bloqueado hasta ack'],
+    ['flujo-kanban-impacto.jpg', 'Kanban · Mover con impacto sucesoras', 'CH-03 / P-23'],
+    ['flujo-import-validacion.jpg', 'Importación · Errores ciclo y grupo', 'bloqueo atómico'],
+  ];
+  const VPS = [
+    ['vp-gantt-1280.jpg', 'Gantt · 1280 px', 'panel auto-flotante'],
+    ['vp-gantt-1920.jpg', 'Gantt · 1920 px', 'panel acoplado'],
+    ['vp-gantt-movil-390.jpg', 'Gantt · móvil 390 px', 'lista por fases'],
+    ['vp-inicio-movil-390.jpg', 'Inicio · móvil 390 px', 'cajón lateral'],
+    ['vp-kanban-movil-390.jpg', 'Kanban · móvil 390 px', 'una columna'],
+    ['vp-tabla-1280.jpg', 'Tabla · 1280 px', 'scroll horizontal controlado'],
+    ['vp-recursos-1920.jpg', 'Recursos · 1920 px', 'heatmap completo'],
+    ['vp-costes-1280.jpg', 'Costes · 1280 px', 'EUR + coste incompleto'],
+  ];
+  const STATES = [["estado-cargando-1440.jpg","Estado: cargando","?estado=cargando"],["estado-vacio-1440.jpg","Estado: vacio","?estado=vacio"],["estado-error-1440.jpg","Estado: error","?estado=error"],["estado-sinpermiso-1440.jpg","Estado: sinpermiso","?estado=sinpermiso"],["estado-sesion-1440.jpg","Estado: sesion","?estado=sesion"],["estado-conflicto-1440.jpg","Estado: conflicto","?estado=conflicto"],["estado-pendiente-1440.jpg","Estado: pendiente","?estado=pendiente"]];
+
+  const fig = (file, title, note) => {
+    const f = document.createElement('figure');
+    f.innerHTML = `<figcaption><b>${title}</b><span>${note}</span></figcaption><a class="shot" href="${DIR}${file}" target="_blank" rel="noopener"><img loading="lazy" alt="${title} — ${note}" src="${DIR}${file}"></a>`;
+    return f;
+  };
+  document.querySelector('#tours-list').replaceChildren(...TOURS.map((t) => {
+    const d = document.createElement('div'); d.className = 'tour';
+    d.innerHTML = `<h3>0${t.id} · ${t.title}</h3><p>${t.goal}</p><p style="margin-top:6px;font-family:ui-monospace,monospace;font-size:11.5px">${t.steps.join(' → ')}</p>`;
+    return d;
+  }));
+  document.querySelector('#flows-grid').replaceChildren(...FLOWS.map(([f, t, n]) => fig(f, t, n)));
+  document.querySelector('#vp-grid').replaceChildren(...VPS.map(([f, t, n]) => fig(f, t, n)));
+  document.querySelector('#states-grid').replaceChildren(...STATES.map(([f, t, n]) => fig(f, t, n)));
+
+  function draw() {
+    const th = document.querySelector('#theme').value;
+    const tour = document.querySelector('#tour').value;
+    const list = tour === 'all' ? SCREENS : SCREENS.filter((s) => TOUR_SLUGS[tour].includes(s.slug));
+    const cards = [];
+    for (const s of list) {
+      if (th === 'both' || th === 'light') cards.push(fig(`${s.slug}-light-1440.jpg`, s.title, 'Claro · 1440 px'));
+      if (th === 'both' || th === 'dark') cards.push(fig(`${s.slug}-dark-1440.jpg`, s.title, 'Oscuro · 1440 px'));
+    }
+    document.querySelector('#screens-note').textContent = `${cards.length} capturas · 1440 px`;
+    document.querySelector('#screens-grid').replaceChildren(...cards);
+  }
+  document.querySelector('#theme').addEventListener('change', draw);
+  document.querySelector('#tour').addEventListener('change', draw);
+  draw();
+</script>
+</body>
+</html>

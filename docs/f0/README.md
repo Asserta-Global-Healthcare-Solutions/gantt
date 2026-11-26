@@ -1,6 +1,6 @@
 # F0 — Entregables de definición y PoC
 
-Estado: **AP-001 aprobado técnicamente** (2026-11-25; validación funcional P-01/P-02 pendiente). **AP-004 cerrado** (2026-11-25). **AP-002a cerrado** (2026-11-26; dirección **C · Asserta** oficial, P-29/RF-34 aprobada). **AP-005 en revisión** (rama `feat/AP-005-threat-model`). **AP-003** siguiente prioridad técnica (Plan Mode); **AP-002b** autorizado en paralelo sobre C. Ramas locales con commits autorizados (P-26), sin push ni merge.
+Estado: consolidado en `integration/f0` (sin modificar `main`, sin push). **AP-001 aprobado técnicamente** (2026-11-25; P-01/P-02 pendiente). **AP-004 cerrado** (2026-11-25). **AP-002a cerrado** (2026-11-26; dirección **C · Asserta** oficial, P-29/RF-34 aprobada y ampliada). **AP-003 ejecutado** (PoC sobre Next.js 16.4.6 + React 19.3.1; pendiente selección humana para `ADR-002`). **AP-002b ejecutado** (17 pantallas y 7 recorridos sobre C; pendiente revisión visual). **AP-005 corregido técnicamente** (aprobaciones IT/Seguridad/DPD/Finanzas/Dirección pendientes). Siguiente ticket de cierre F0: **AP-006 (ADR-001..010)** y **Gate F0**.
 
 Estos documentos son nuevos y **no sustituyen** el kit original (`README.md`, `AGENTS.md`, `docs/01..08`, `docs/adr/0000`). Las correcciones se proponen aquí y solo se aplicarán al kit tras su aprobación.
 
