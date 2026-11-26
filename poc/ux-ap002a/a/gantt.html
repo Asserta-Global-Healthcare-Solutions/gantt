@@ -64,7 +64,7 @@
         <div class="p-tabs" role="tablist"><button type="button" role="tab" data-tab="detalle">Detalle</button><button type="button" role="tab" data-tab="historial">Historial</button></div>
       </div>
       <button class="btn btn-ghost p-close" type="button" id="p-close" aria-label="Cerrar detalle"><span class="i i-x" aria-hidden="true"></span></button>
-      <div class="p-body" data-p-body></div>
+      <div class="p-body" data-p-body tabindex="0" role="region" aria-label="Contenido del detalle"></div>
     </aside>
     <dl class="keys" id="keys" hidden>
       <dt><span class="kbd">↑ ↓</span></dt><dd>Moverse por tareas</dd>
@@ -83,6 +83,7 @@ import { DEMO } from '../shared/demo.js';
 import { mountGantt } from '../shared/gantt.js';
 import { initTheme, stateFromQuery, stateBlock, fmtShort, signed, el } from '../shared/util.js';
 
+import('../shared/tooltip.js').then((m) => m.initTooltips());
 initTheme('ap002a-a-theme', 'dark');
 const $ = (s) => document.querySelector(s);
 const stage = $('#stage'), panel = $('#panel'), toast = $('#toast');
@@ -113,11 +114,11 @@ else {
   for (const [k, p] of Object.entries(DEMO.people)) sel.append(el('option', { value: k }, p.name));
   sel.addEventListener('change', () => g.filter({ resp: sel.value }));
   $('#f-q').addEventListener('input', (e) => g.filter({ q: e.target.value }));
-  for (const b of document.querySelectorAll('[data-status]')) b.addEventListener('click', () => b.setAttribute('aria-pressed', String(g.toggleStatus(b.dataset.status))));
-  const setZoom = (z) => { g.zoom(z); for (const b of document.querySelectorAll('[data-zoom]')) b.setAttribute('aria-pressed', String(b.dataset.zoom === z)); };
-  for (const b of document.querySelectorAll('[data-zoom]')) b.addEventListener('click', () => setZoom(b.dataset.zoom));
-  const tog = (k) => { const v = g.toggle(k); document.querySelector(`[data-toggle="${k}"]`).setAttribute('aria-pressed', String(v)); };
-  for (const b of document.querySelectorAll('[data-toggle]')) b.addEventListener('click', () => tog(b.dataset.toggle));
+  for (const b of document.querySelectorAll('button[data-status]')) b.addEventListener('click', () => b.setAttribute('aria-pressed', String(g.toggleStatus(b.dataset.status))));
+  const setZoom = (z) => { g.zoom(z); for (const b of document.querySelectorAll('button[data-zoom]')) b.setAttribute('aria-pressed', String(b.dataset.zoom === z)); };
+  for (const b of document.querySelectorAll('button[data-zoom]')) b.addEventListener('click', () => setZoom(b.dataset.zoom));
+  const tog = (k) => { const v = g.toggle(k); document.querySelector(`button[data-toggle="${k}"]`).setAttribute('aria-pressed', String(v)); };
+  for (const b of document.querySelectorAll('button[data-toggle]')) b.addEventListener('click', () => tog(b.dataset.toggle));
   $('[data-today]').addEventListener('click', () => g.today());
   const pre = new URLSearchParams(location.search).get('task');
   if (pre && DEMO.meta[pre]) g.select(pre, true);

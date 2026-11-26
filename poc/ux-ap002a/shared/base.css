@@ -48,6 +48,13 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .i-table-2 { --m: url(../node_modules/lucide-static/icons/table-2.svg); }
 .i-square-kanban { --m: url(../node_modules/lucide-static/icons/square-kanban.svg); }
 .i-calendar-clock { --m: url(../node_modules/lucide-static/icons/calendar-clock.svg); }
+.i-panel-left { --m: url(../node_modules/lucide-static/icons/panel-left.svg); }
+.i-panel-right { --m: url(../node_modules/lucide-static/icons/panel-right.svg); }
+.i-maximize-2 { --m: url(../node_modules/lucide-static/icons/maximize-2.svg); }
+.i-minimize-2 { --m: url(../node_modules/lucide-static/icons/minimize-2.svg); }
+.i-pin { --m: url(../node_modules/lucide-static/icons/pin.svg); }
+.i-rows-3 { --m: url(../node_modules/lucide-static/icons/rows-3.svg); }
+.i-rows-4 { --m: url(../node_modules/lucide-static/icons/rows-4.svg); }
 .i-arrow-right { --m: url(../node_modules/lucide-static/icons/arrow-right.svg); }
 
 /* Controles */
@@ -217,3 +224,9 @@ dialog.impact footer { display: flex; justify-content: flex-end; gap: 8px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+/* Tooltip de indicadores técnicos (shared/tooltip.js) */
+.tip { position: fixed; left: 0; top: 0; z-index: 60; max-width: 34ch; padding: 7px 10px; border-radius: var(--radius); background: var(--text); color: var(--bg); font: 400 var(--fs-small)/1.4 var(--font-ui); pointer-events: none; box-shadow: var(--shadow-float); }
+.tip[hidden] { display: none; }
+[data-tip] { cursor: help; }
+button[data-tip], a[data-tip], .g-bar[data-tip] { cursor: pointer; }

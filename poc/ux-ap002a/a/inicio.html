@@ -35,6 +35,7 @@ import { DEMO } from '../shared/demo.js';
 import { inicioData } from '../shared/inicio-data.js';
 import { initTheme, stateFromQuery, stateBlock, el, icon, avatar, fmtShort, fmtStamp, isoWeek, toEpochDay, signed, STATUS } from '../shared/util.js';
 
+import('../shared/tooltip.js').then((m) => m.initTooltips());
 initTheme('ap002a-a-theme', 'dark');
 const home = document.querySelector('#home');
 const estado = stateFromQuery();

@@ -1,0 +1,142 @@
+/* DIRECCIÓN C · «Asserta». Base estética de B (Cuaderno) + rasgos de A (Instrumento).
+   Solo se añade lo nuevo; todo lo demás viene de b.css y shared/base.css. */
+@import url(../b/b.css);
+
+/* 1 · Separación cromática (semánticos). Ningún color repite significado:
+   marca ≠ estado de tarea ≠ error/conflicto ≠ advertencia ≠ ruta crítica. */
+:root, :root[data-theme="light"] {
+  --brand: #1f5c63; --brand-ink: #ffffff; --brand-soft: #e1eced;   /* identidad provisional (P-25): verde petróleo */
+  --focus: var(--brand);
+  --signal: #a3122b; --signal-text: #9e1129; --signal-soft: #f7dde2; /* error y conflicto: carmín */
+  --crit-ink: #b3300e;                                               /* ruta crítica: bermellón (barras y vínculos, de B) */
+  --warn: #c58a1c; --warn-text: #7a4f00; --warn-soft: #f6ead0;       /* advertencia: vencido, plazo superado */
+  --st-pendiente: #a49d8b; --st-en_curso: #141413; --st-bloqueada: #c58a1c; --st-completada: #4a6b3a;
+}
+:root[data-theme="dark"] {
+  --brand: #6fb6bc; --brand-ink: #0b1f21; --brand-soft: rgb(111 182 188 / .14);
+  --focus: var(--brand);
+  --signal: #ff6b86; --signal-text: #ff8fa3; --signal-soft: rgb(255 107 134 / .13);
+  --crit-ink: #ff7d5c;
+  --warn: #e0a93b; --warn-text: #e8b85a; --warn-soft: rgb(224 169 59 / .13);
+  --st-pendiente: #6f6a5f; --st-en_curso: #ece8de; --st-bloqueada: #e0a93b; --st-completada: #8fae7e;
+}
+
+/* 2 · Densidad: estándar 36 px (B) y compacta 28 px (A) */
+:root { --nav-w: 248px; --name-w: 220px; --panel-w: 340px;
+  --grid-tpl: 52px var(--name-w) 40px 60px 82px 46px; --grid-cols-w: calc(280px + var(--name-w)); }
+:root[data-density="compacta"] { --row-h: 28px; --bar-h: 12px; --ms: 10px; --group-h: 4px; --fs-body: 13px; --head-h: 54px; --indent: 14px; }
+
+/* 3 · Marco con navegación plegable */
+body { grid-template-columns: var(--nav-w) minmax(0, 1fr); }
+body.nav-plegada { --nav-w: 0px; }
+main { grid-column: -2 / -1; } /* con la navegación oculta, main no debe caer en la columna de 0 px */
+body.nav-plegada .index { display: none; }
+.wordmark b { color: var(--brand); }
+.toc a[aria-current="page"] .n { color: var(--brand); }
+.toc .sub a[aria-current="page"] { box-shadow: inset 2px 0 0 var(--brand); }
+.icon-btn { display: inline-grid; place-items: center; width: var(--ctl-h); min-height: var(--ctl-h); padding: 0; border: 1px solid transparent; border-radius: var(--radius); background: none; color: var(--text-2); cursor: pointer; --i-size: 16px; }
+@media (hover: hover) { .icon-btn:hover { background: var(--surface-2); color: var(--text); } }
+.icon-btn[aria-pressed="true"] { color: var(--text); background: var(--surface-2); }
+
+/* 4 · Cabecera: titular de B + lecturas de A */
+.masthead { padding-top: 12px; }
+.titlebar { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 12px 24px; }
+.reads { display: flex; }
+.read { padding: 0 14px; border-left: 1px solid var(--line); display: grid; gap: 3px; }
+.read:first-child { border-left: 0; }
+.read dt { font: 500 11px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); }
+.read dd { margin: 0; font: 500 22px/1.05 var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.read dd small { font-size: 11px; color: var(--text-3); margin-left: 3px; letter-spacing: 0; }
+.read.crit dd { color: var(--crit-ink); } .read.danger dd { color: var(--signal-text); } .read.warn dd { color: var(--warn-text); }
+.read:focus-visible { outline-offset: 4px; }
+.dateline .alert { color: var(--signal-text); }
+.dateline .crit { color: var(--crit-ink); }
+
+/* 5 · Pantalla completa de planificación: el Gantt manda */
+body.vista-completa { --nav-w: 0px; }
+body.vista-completa .index, body.vista-completa .masthead h1, body.vista-completa .dateline, body.vista-completa .tabs { display: none; }
+body.vista-completa .masthead { padding: 6px 16px; border-bottom: 1px solid var(--line); }
+body.vista-completa .kicker .fs-title { display: inline; }
+.kicker .fs-title { display: none; color: var(--text); font: 650 14px/1 var(--font-ui); letter-spacing: -.01em; text-transform: none; }
+body.vista-completa .titlebar { grid-template-columns: auto 1fr; }
+body.vista-completa .read dd { font-size: 17px; }
+body.vista-completa .toolbar { padding: 6px 16px; }
+
+/* 6 · Escenario: panel acoplado, flotante o cerrado según el espacio del cronograma */
+.stage { position: relative; display: grid; min-height: 0; min-width: 0; grid-template: minmax(0, 1fr) / minmax(0, 1fr); }
+.stage[data-mode="dock"] { grid-template-columns: minmax(0, 1fr) 6px var(--panel-w); }
+.stage[data-mode="closed"] .panel, .stage:not([data-mode="dock"]) .gutter { display: none; }
+.stage[data-mode="float"] .panel { position: absolute; top: 8px; right: 8px; bottom: 8px; width: min(var(--panel-w), calc(100% - 16px)); border: 1px solid var(--line-strong); border-radius: var(--radius-lg); box-shadow: var(--shadow-float); z-index: 20; }
+.panel .p-tools { position: absolute; top: 10px; right: 8px; display: flex; gap: 2px; }
+.panel .p-head { padding-right: 84px; }
+.p-mode { font: 500 11px/1.3 var(--font-mono); letter-spacing: .04em; color: var(--text-3); padding: 6px 16px 0; }
+.p-mode:empty { display: none; }
+.p-mode { padding-right: 84px; }
+.stage[data-mode="float"]:not([data-has-sel]) .panel { display: none; }
+
+/* 7 · Tabla redimensionable */
+.g-gridhead { position: sticky; }
+.g-resize { position: absolute; top: 0; bottom: 0; right: -4px; width: 8px; cursor: col-resize; z-index: 6; touch-action: none; border: 0; padding: 0; background: transparent; }
+.g-resize::after { content: ""; position: absolute; top: 10px; bottom: 10px; left: 3px; width: 2px; border-radius: 1px; background: transparent; }
+@media (hover: hover) { .g-resize:hover::after { background: var(--line-strong); } }
+.g-resize:focus-visible::after { background: var(--focus); }
+
+/* 8 · Colores con significado en el Gantt */
+.fl.zero { color: var(--crit-ink); }
+.g-row[data-status]:not(.k-group) .g-c-code { box-shadow: inset 3px 0 0 var(--st, transparent); }
+.g-row[data-status="pendiente"] { --st: var(--st-pendiente); } .g-row[data-status="en_curso"] { --st: var(--st-en_curso); }
+.g-row[data-status="bloqueada"] { --st: var(--st-bloqueada); } .g-row[data-status="completada"] { --st: var(--st-completada); }
+.c-FACT_DONE .g-bar { box-shadow: inset 0 0 0 1px var(--st-completada); }
+.g-nowtag { border-color: var(--text); }
+:root[data-density="compacta"] .g-blabel.out { font-family: var(--font-mono); font-size: 11px; color: var(--text-3); }
+
+/* 9 · Inicio: advertencia ≠ error ≠ crítica */
+.fig.warn b { color: var(--warn-text); } .fig.danger b { color: var(--signal-text); }
+.day.over .d b, .day.over .d span { color: var(--warn-text); }
+.mstone .crit { color: var(--crit-ink); } .mstone .over { color: var(--warn-text); }
+.health.red { color: var(--signal-text); } .health.red::before { color: var(--signal); }
+.health.amber::before { color: var(--warn); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font: 500 11px/1.4 var(--font-mono); color: var(--text-3); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 10px; border-radius: 2px; background: var(--c); display: inline-block; }
+
+/* 10 · Pantallas pequeñas: lista de lectura + ficha a pantalla completa (no se comprime el escritorio) */
+.mlist { display: none; overflow: auto; padding: 8px 16px 32px; }
+body.movil .mlist { display: block; }
+body.movil #gantt, body.movil .toolbar, body.movil .reads, body.movil .gutter { display: none; }
+body.movil .stage { grid-template: minmax(0, 1fr) / minmax(0, 1fr); }
+body.movil .stage .panel { display: none; }
+body.movil .stage[data-sheet="open"] .panel { display: flex; position: fixed; inset: 0; z-index: 30; border: 0; border-radius: 0; width: auto; }
+.mlist h3 { font: 500 11px/1 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--text-3); padding: 18px 0 6px; border-bottom: 3px double var(--line-strong); }
+.mlist button { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 2px 10px; width: 100%; min-height: 56px; padding: 8px 0; border: 0; border-bottom: 1px solid var(--row-line); background: none; text-align: left; cursor: pointer; }
+.mlist button .nm { font-weight: 500; }
+.mlist button .meta { grid-column: 2; font: 500 11px/1.4 var(--font-mono); color: var(--text-3); }
+.mlist button .fl { grid-row: 1 / span 2; grid-column: 3; align-self: center; }
+.mlist .note { font-size: var(--fs-small); color: var(--text-3); padding: 12px 0; }
+@media (max-width: 760px) {
+  body.nav-abierta-movil .index { display: flex; position: fixed; inset: 0 auto 0 0; width: min(300px, 86vw); z-index: 40; background: var(--bg); box-shadow: var(--shadow-float); }
+  .titlebar { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* 11 · Atajos y leyenda (de A) */
+.keys { position: absolute; right: 14px; bottom: 14px; z-index: 25; display: grid; gap: 12px; max-width: 360px; padding: 12px 14px; border: 1px solid var(--line-strong); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-float); font-size: var(--fs-small); }
+.keys[hidden] { display: none; }
+.keys dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; margin: 0; }
+.keys dt { text-align: right; } .keys dd { margin: 0; color: var(--text-2); }
+.toolbar .seg button { min-width: var(--ctl-h); --i-size: 16px; }
+.toolbar .seg button .i { vertical-align: -3px; }
+
+/* 12 · El Gantt manda: cabecera compacta y adaptada al ancho real de la cabecera (no a la pantalla) */
+.masthead { container-type: inline-size; padding: 10px 20px 8px; border-bottom: 3px double var(--line-strong); }
+.kicker .tabs { margin: 0; border: 0; gap: 14px; }
+.kicker .tabs a { height: 26px; margin: 0; letter-spacing: 0; text-transform: none; font: 500 13px/1 var(--font-ui); border-bottom-width: 2px; }
+.kicker .tabs .n { font-size: 11px; }
+.titlebar { margin-top: 4px; }
+.masthead h1 { font-size: clamp(24px, 2.1vw, 32px); white-space: nowrap; }
+.dateline { font-size: 11.5px; }
+.toolbar { padding: 8px 20px; gap: 6px; }
+.chip { padding: 0 8px; }
+@container (max-width: 1100px) { .read:nth-child(n+5) { display: none; } .read dd { font-size: 18px; } .read { padding: 0 10px; } }
+@container (max-width: 760px) { .reads { display: none; } .kicker .tabs { display: none; } }
+.toolbar .field select { max-width: 112px; }
+.toolbar .field input { width: 7ch; }

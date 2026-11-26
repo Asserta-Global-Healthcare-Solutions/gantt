@@ -1,0 +1,55 @@
+c-inicio-light-1280                      errores JS 0  axe serias/críticas 0  (moderadas/menores 0)
+c-gantt-light-1280                       errores JS 0  axe serias/críticas 0  (moderadas/menores 0)
+c-inicio-light-1440                      errores JS 0  axe serias/críticas 0  (moderadas/menores 0)
+c-gantt-light-1440                       errores JS 0  axe serias/críticas 0  (moderadas/menores 0)
+c-inicio-light-1920                      errores JS 0  axe serias/críticas 0  (moderadas/menores 0)
+c-gantt-light-1920                       errores JS 0  axe serias/críticas 0  (moderadas/menores 0)
+c-inicio-dark-1280                       errores JS 0  axe serias/críticas 0  (moderadas/menores 0)
+c-gantt-dark-1280                        errores JS 0  axe serias/críticas 0  (moderadas/menores 0)
+c-inicio-dark-1440                       errores JS 0  axe serias/críticas 0  (moderadas/menores 0)
+c-gantt-dark-1440                        errores JS 0  axe serias/críticas 0  (moderadas/menores 0)
+c-inicio-dark-1920                       errores JS 0  axe serias/críticas 0  (moderadas/menores 0)
+c-gantt-dark-1920                        errores JS 0  axe serias/críticas 0  (moderadas/menores 0)
+c-gantt-conflicto-1440                   errores JS 0  axe serias/críticas 0  (moderadas/menores 0)
+c-gantt-historial-1440                   errores JS 0  axe serias/críticas 0  (moderadas/menores 0)
+c-gantt-impacto-1440                     errores JS 0  axe serias/críticas 0  (moderadas/menores 0)
+c-estado-vacio                           errores JS 0  axe serias/críticas 0  (moderadas/menores 0)
+c-estado-error                           errores JS 0  axe serias/críticas 0  (moderadas/menores 0)
+c-estado-sinpermiso                      errores JS 0  axe serias/críticas 0  (moderadas/menores 0)
+c-inicio-light-390                       errores JS 0  axe serias/críticas 0  (moderadas/menores 0)
+c-gantt-compacta-1440                    errores JS 0  axe serias/críticas 0  (moderadas/menores 0)
+c-gantt-compacta-dark-1920               errores JS 0  axe serias/críticas 0  (moderadas/menores 0)
+c-gantt-panel-acoplado-1920              errores JS 0  axe serias/críticas 0  (moderadas/menores 0)
+c-gantt-panel-auto-flotante-1280         errores JS 0  axe serias/críticas 0  (moderadas/menores 0)
+c-gantt-pantalla-completa-1440           errores JS 0  axe serias/críticas 0  (moderadas/menores 0)
+c-gantt-pantalla-completa-dark-1920      errores JS 0  axe serias/críticas 0  (moderadas/menores 0)
+c-gantt-critica-linea-base-1440          errores JS 0  axe serias/críticas 0  (moderadas/menores 0)
+c-gantt-conflicto-dark-1440              errores JS 0  axe serias/críticas 0  (moderadas/menores 0)
+c-gantt-leyenda-1440                     errores JS 0  axe serias/críticas 0  (moderadas/menores 0)
+c-gantt-movil-lista-390                  errores JS 0  axe serias/críticas 0  (moderadas/menores 0)
+c-gantt-movil-ficha-390                  errores JS 0  axe serias/críticas 0  (moderadas/menores 0)
+
+Regresiones funcionales · c
+   ✓ c · arrastre → vista previa → diálogo de impacto → confirmar sube revisión
+   ✓ c · cancelar la vista previa no persiste
+   ✓ c · redimensionar duración → diálogo de impacto
+   ✓ c · teclado Alt+→ → diálogo de impacto
+   ✓ c · conflicto nuevo exige reconocimiento (confirmar deshabilitado)
+   ✓ c · filtro por persona reduce filas y avisa de que el plan no cambia
+   ✓ c · ruta crítica y línea base se activan y desactivan
+   ✓ c · dependencias dibujadas (19) con un conflicto discontinuo
+   ✓ c · historial de 2.1 muestra 4 cambios
+
+Comportamiento propio · c
+   ✓ c · 1280 px: panel acoplado pasa a flotante por falta de espacio
+   ✓ c · 1920 px: panel acoplado se mantiene acoplado
+   ✓ c · 1440 px: al plegar navegación y estrechar la tabla vuelve a acoplarse
+   ✓ c · densidad compacta: filas de 28 px; estándar: 36 px
+   ✓ c · preferencias persistentes (densidad, zoom, panel) tras recargar
+   ✓ c · tabla redimensionable por teclado (+64 px)
+   ✓ c · pantalla completa oculta navegación y titular; F la alterna
+   ✓ c · tooltip de indicador por teclado (role=tooltip + aria-describedby)
+   ✓ c · 390 px: lista de lectura y ficha a pantalla completa
+
+Cargas auditadas: 30
+OK: sin errores JS, sin violaciones axe serias/críticas y sin regresiones

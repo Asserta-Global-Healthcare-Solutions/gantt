@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portal de proveedores v2 · Gantt — Dirección C</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../shared/base.css">
+<link rel="stylesheet" href="c.css">
+</head>
+<body>
+<nav class="index" id="nav" aria-label="Índice">
+  <a class="wordmark" href="../index.html"><b>Asserta</b><span>Projects · provisional</span></a>
+  <div class="toc">
+    <a href="inicio.html"><span class="n">01</span><span class="t">Inicio</span><span class="lead"></span><span class="c">9</span></a>
+    <a href="gantt.html" class="open"><span class="n">02</span><span class="t">Proyectos</span><span class="lead"></span><span class="c">4</span></a>
+    <div class="sub">
+      <a href="gantt.html" aria-current="page"><span class="g-code">PPV2</span><span class="t">Portal de proveedores v2</span></a>
+      <a href="#"><span class="g-code">MERP</span><span class="t">Migración del ERP a la nube</span></a>
+      <a href="#"><span class="g-code">ILAB</span><span class="t">Interfaz con laboratorio externo</span></a>
+      <a href="#"><span class="g-code">AUDA</span><span class="t">Auditoría interna de accesos</span><span class="i i-lock lock" role="img" aria-label="Restringido"></span></a>
+    </div>
+    <a href="#" aria-disabled="true" title="Pendiente de AP-002b"><span class="n">03</span><span class="t">Cartera</span><span class="lead"></span><span class="c">—</span></a>
+    <a href="#" aria-disabled="true" title="Pendiente de AP-002b"><span class="n">04</span><span class="t">Recursos</span><span class="lead"></span><span class="c">—</span></a>
+    <a href="#" aria-disabled="true" title="Pendiente de AP-002b"><span class="n">05</span><span class="t">Horas</span><span class="lead"></span><span class="c">—</span></a>
+  </div>
+  <div class="foot">
+    <span class="av" title="Lucía Ferrer" role="img" aria-label="Lucía Ferrer">LF</span>
+    <span class="who">Lucía Ferrer<small>Jefa de proyecto</small></span><span class="sp"></span>
+    <button class="btn btn-ghost" type="button" data-theme-toggle aria-label="Modo oscuro"><span class="i i-moon" aria-hidden="true"></span></button>
+  </div>
+</nav>
+<main>
+  <header class="masthead">
+    <div class="kicker">
+      <button class="icon-btn" type="button" id="nav-btn" aria-controls="nav" aria-expanded="true" data-tip="Mostrar u ocultar la navegación ( [ )"><span class="i i-panel-left" aria-hidden="true"></span><span class="sr-only">Navegación</span></button>
+      <a href="#">02 Proyectos</a><span>/</span><span>PPV2</span><span class="fs-title">Portal de proveedores v2</span>
+      <span class="sp"></span>
+      <nav class="tabs" aria-label="Vistas del proyecto">
+        <a href="#" aria-current="page"><span class="n">a</span>Gantt</a><a href="#"><span class="n">b</span>Tabla</a><a href="#"><span class="n">c</span>Kanban</a><a href="#"><span class="n">d</span>Ajustes</a>
+      </nav>
+      <span class="proto-flag">Prototipo · datos ficticios</span>
+    </div>
+    <div class="titlebar">
+      <div><h1>Portal de proveedores v2</h1><p class="dateline" id="dateline"></p></div>
+      <dl class="reads" id="reads" aria-label="Lecturas del plan"></dl>
+    </div>
+  </header>
+  <div class="toolbar" role="toolbar" aria-label="Controles del Gantt">
+    <div class="seg" role="group" aria-label="Escala">
+      <button type="button" data-zoom="dia" aria-pressed="false">Día</button><button type="button" data-zoom="semana" aria-pressed="false">Semana</button><button type="button" data-zoom="mes" aria-pressed="false">Mes</button>
+    </div>
+    <button class="icon-btn" type="button" data-today data-tip="Ir a hoy (T)"><span class="i i-crosshair" aria-hidden="true"></span><span class="sr-only">Hoy</span></button>
+    <button class="btn" type="button" data-toggle="critical" aria-pressed="true" data-tip="Tareas con holgura ≤ 0 (bermellón). Atajo C.">Ruta crítica</button>
+    <button class="btn" type="button" data-toggle="baseline" aria-pressed="true" data-tip="Trazo bajo cada barra: fechas congeladas el 30 oct en «Línea base inicial». Atajo B.">Línea base</button>
+    <label class="field"><span class="i i-users" aria-hidden="true"></span><span class="sr-only">Persona</span><select id="f-resp"><option value="">Todas</option></select></label>
+    <div class="chips" role="group" aria-label="Estado">
+      <button class="chip" type="button" data-status="pendiente" aria-pressed="false">Pendiente</button>
+      <button class="chip" type="button" data-status="en_curso" aria-pressed="false">En curso</button>
+      <button class="chip" type="button" data-status="completada" aria-pressed="false">Completada</button>
+    </div>
+    <label class="field"><span class="i i-search" aria-hidden="true"></span><span class="sr-only">Buscar tarea</span><input id="f-q" type="search" placeholder="Filtrar" size="9"></label>
+    <span class="fnote" id="fnote" aria-live="polite"></span>
+    <span class="sp"></span>
+    <div class="seg" role="group" aria-label="Densidad">
+      <button type="button" data-density="estandar" aria-pressed="false" data-tip="Densidad estándar: filas de 36 px (D alterna)"><span class="i i-rows-3" aria-hidden="true"></span><span class="sr-only">Estándar</span></button><button type="button" data-density="compacta" aria-pressed="false" data-tip="Densidad compacta: filas de 28 px (D alterna)"><span class="i i-rows-4" aria-hidden="true"></span><span class="sr-only">Compacta</span></button>
+    </div>
+    <div class="seg" role="group" aria-label="Panel de detalle">
+      <button type="button" data-panel="dock" aria-pressed="false" data-tip="Panel acoplado. Si dejaría menos de 480 px de cronograma, se muestra flotante (P alterna)"><span class="i i-panel-right" aria-hidden="true"></span><span class="sr-only">Panel acoplado</span></button><button type="button" data-panel="float" aria-pressed="false" data-tip="Panel flotante sobre el cronograma, solo con una tarea seleccionada"><span class="i i-layers" aria-hidden="true"></span><span class="sr-only">Panel flotante</span></button><button type="button" data-panel="closed" aria-pressed="false" data-tip="Panel cerrado; se abre al seleccionar una tarea"><span class="i i-x" aria-hidden="true"></span><span class="sr-only">Panel cerrado</span></button>
+    </div>
+    <button class="icon-btn" type="button" id="fs-btn" aria-pressed="false" data-tip="Planificación a pantalla completa (F)"><span class="i i-maximize-2" aria-hidden="true"></span><span class="sr-only">Pantalla completa</span></button>
+    <button class="icon-btn" type="button" id="keys-btn" aria-expanded="false" aria-controls="keys" data-tip="Atajos y leyenda de colores (?)"><span class="i i-keyboard" aria-hidden="true"></span><span class="sr-only">Atajos y leyenda</span></button>
+  </div>
+  <div class="stage" id="stage" data-mode="dock">
+    <div id="gantt"></div>
+    <div class="gutter" id="gutter" role="separator" aria-orientation="vertical" aria-label="Ancho del panel" aria-valuemin="300" aria-valuemax="560" aria-valuenow="340" tabindex="0"></div>
+    <aside class="panel" id="panel" aria-label="Detalle de la tarea">
+      <p class="p-mode" id="p-mode" role="status"></p>
+      <div class="p-head">
+        <h2 class="p-title" data-p-title></h2>
+        <div class="p-tabs" role="tablist"><button type="button" role="tab" data-tab="detalle">Detalle</button><button type="button" role="tab" data-tab="historial">Historial</button></div>
+      </div>
+      <div class="p-tools">
+        <button class="icon-btn" type="button" id="p-pin" data-tip="Alternar acoplado / flotante"><span class="i i-pin" aria-hidden="true"></span><span class="sr-only">Acoplar o hacer flotante</span></button>
+        <button class="icon-btn" type="button" id="p-close" aria-label="Cerrar detalle"><span class="i i-x" aria-hidden="true"></span></button>
+      </div>
+      <div class="p-body" data-p-body tabindex="0" role="region" aria-label="Contenido del detalle"></div>
+    </aside>
+    <div class="mlist" id="mlist" aria-label="Tareas del proyecto"></div>
+    <div class="keys" id="keys" hidden>
+      <dl>
+        <dt><span class="kbd">↑ ↓ ← →</span></dt><dd>Moverse, contraer y expandir</dd>
+        <dt><span class="kbd">Alt ← →</span></dt><dd>Desplazar un día laborable (vista previa)</dd>
+        <dt><span class="kbd">Enter</span></dt><dd>Abrir detalle</dd>
+        <dt><span class="kbd">1 2 3</span></dt><dd>Día · semana · mes</dd>
+        <dt><span class="kbd">C B T</span></dt><dd>Ruta crítica · línea base · hoy</dd>
+        <dt><span class="kbd">D P F [</span></dt><dd>Densidad · panel · pantalla completa · navegación</dd>
+      </dl>
+      <p class="legend" aria-label="Leyenda de colores">
+        <span><i style="--c:var(--brand)"></i>Identidad</span><span><i style="--c:var(--crit-bar)"></i>Ruta crítica</span>
+        <span><i style="--c:var(--signal)"></i>Conflicto / error</span><span><i style="--c:var(--warn)"></i>Advertencia</span>
+        <span><i style="--c:var(--st-en_curso)"></i>En curso</span><span><i style="--c:var(--st-completada)"></i>Completada</span><span><i style="--c:var(--st-pendiente)"></i>Pendiente</span>
+      </p>
+    </div>
+  </div>
+</main>
+<div class="toast" id="toast" role="status" hidden></div>
+<script type="module">
+import { DEMO } from '../shared/demo.js';
+import { mountGantt } from '../shared/gantt.js';
+import { initTooltips } from '../shared/tooltip.js';
+import { loadPrefs } from '../shared/prefs.js';
+import { initTheme, stateFromQuery, stateBlock, fmtShort, signed, el, STATUS } from '../shared/util.js';
+
+initTooltips();
+initTheme('ap002a-c-theme', 'light');
+const $ = (s) => document.querySelector(s);
+const root = document.documentElement, body = document.body, q = new URLSearchParams(location.search);
+const prefs = loadPrefs('ap002a-c-prefs');
+const stage = $('#stage'), panel = $('#panel'), toast = $('#toast');
+const MIN_LANE = 480;
+
+root.dataset.density = prefs.get('density');
+root.style.setProperty('--name-w', `${prefs.get('nameW')}px`);
+body.classList.toggle('nav-plegada', prefs.get('nav') === 'plegada');
+if (q.get('vista') === 'completa') body.classList.add('vista-completa');
+const pressed = (sel, attr, v) => { for (const b of document.querySelectorAll(sel)) b.setAttribute('aria-pressed', String(b.dataset[attr] === v)); };
+
+const estado = stateFromQuery();
+if (estado) { stage.replaceChildren(stateBlock(estado)); stage.dataset.mode = 'closed'; document.querySelector('.toolbar').hidden = true; }
+else {
+  let tt;
+  const say = (msg) => { toast.textContent = msg; toast.hidden = false; clearTimeout(tt); tt = setTimeout(() => (toast.hidden = true), 2600); };
+  const reads = $('#reads');
+  const read = (k, v, u, cls, tip) => el('div', { class: `read ${cls ?? ''}`, tabindex: '0', 'data-tip': tip }, el('dt', {}, k), el('dd', {}, v, u ? el('small', {}, u) : null));
+  let pref = prefs.get('panel'), mobile = false;
+
+  const g = mountGantt($('#gantt'), DEMO, {
+    id: 'c', zoom: prefs.get('zoom'), px: { dia: 34, semana: 14, mes: 5 }, panel,
+    rowH: () => (root.dataset.density === 'compacta' ? 28 : 36),
+    labelInside: () => root.dataset.density !== 'compacta',
+    columns: [{ key: 'code', label: 'Nº', longLabel: 'Código WBS' }, { key: 'name', label: 'Tarea' }, { key: 'resp', label: 'Resp.', longLabel: 'Responsable' }, { key: 'finish', label: 'Fin' }, { key: 'float', label: 'Holgura' }, { key: 'prog', label: '%', longLabel: 'Progreso' }],
+    barLabel: (m) => m.name,
+    msLabel: (name, d) => `${d.toUpperCase()} · ${name}`,
+    todayLabel: (d) => `HOY · ${d.toUpperCase()}`,
+    toast: say,
+    onSelect: () => { stage.dataset.hasSel = ''; openPanel(); },
+    openPanel: () => openPanel(),
+    onRender: ({ plan, revision, filtering, preview }) => {
+      const slip = plan.tasks['5.1'].startIdx - DEMO.baseline.tasks['5.1'].startIdx;
+      const crit = Object.entries(plan.tasks).filter(([k, v]) => v.critical && DEMO.meta[k].kind !== 'group').length;
+      const minF = Math.min(...Object.values(plan.tasks).map((t) => t.totalFloat).filter((f) => f != null));
+      reads.replaceChildren(
+        read('Fin previsto', fmtShort(plan.tasks['5.1'].start), '', '', 'Fecha del hito Go-live calculada con dependencias, calendario y hechos registrados.'),
+        read('Δ línea base', signed(slip), 'd', slip > 0 ? 'warn' : '', 'Días laborables entre el fin previsto y el de «Línea base inicial» (congelada el 30 oct).'),
+        read('Conflictos', String(plan.conflicts.length), '', plan.conflicts.length ? 'danger' : '', 'Dependencias incumplidas por fechas manuales o hechos reales; quedan reconocidas y visibles.'),
+        read('Ruta crítica', String(crit), 'tareas', 'crit', 'Tareas con holgura ≤ 0: cualquier retraso mueve el fin del proyecto.'),
+        read('Holgura mín.', signed(minF), 'd', minF < 0 ? 'danger' : '', 'Holgura total más baja del plan. Negativa = una cadena llega tarde a una fecha fijada manualmente.'),
+        read('Revisión', String(revision), preview ? 'vista previa' : '', '', 'Cada cambio confirmado incrementa la revisión; dos cambios simultáneos sobre la misma revisión generan conflicto 409.'));
+      $('#dateline').replaceChildren(
+        el('span', {}, `${fmtShort(DEMO.project.startDate)} 2026 → ${fmtShort(plan.tasks['5.1'].start)} 2027`),
+        el('span', {}, 'Calendario L–V · Europe/Madrid'),
+        el('span', {}, 'Línea base inicial · 30 oct'));
+      $('#fnote').textContent = filtering ? 'Filtro activo · el plan no cambia' : '';
+    },
+  });
+
+  // ---- Panel: acoplado / flotante / cerrado, decidido por el espacio real del cronograma ----
+  const panelW = () => parseFloat(getComputedStyle(root).getPropertyValue('--panel-w'));
+  function layout() {
+    if (mobile) return;
+    const gridW = $('#gantt .g-grid')?.offsetWidth ?? 0;
+    let mode = pref;
+    const laneIfDocked = stage.clientWidth - gridW - panelW() - 6;
+    const auto = pref === 'dock' && laneIfDocked < MIN_LANE;
+    if (auto) mode = 'float';
+    stage.dataset.mode = mode;
+    $('#p-mode').textContent = auto ? `Flotante automático: acoplado dejaría ${Math.max(0, Math.round(laneIfDocked))} px de cronograma (mínimo ${MIN_LANE}).` : '';
+    pressed('button[data-panel]', 'panel', pref);
+  }
+  function setPanel(p, persist = true) { pref = p; if (persist) prefs.save({ panel: p }); layout(); }
+  function openPanel() {
+    if (mobile) { stage.dataset.sheet = 'open'; $('#p-close').focus(); return; }
+    if (pref === 'closed') setPanel('dock', false);
+  }
+  new ResizeObserver(layout).observe(stage);
+  for (const b of document.querySelectorAll('button[data-panel]')) b.addEventListener('click', () => setPanel(b.dataset.panel));
+  $('#p-close').addEventListener('click', () => { if (mobile) { delete stage.dataset.sheet; return; } if (stage.dataset.mode === 'float') { delete stage.dataset.hasSel; return; } setPanel('closed'); });
+  $('#p-pin').addEventListener('click', () => setPanel(stage.dataset.mode === 'dock' ? 'float' : 'dock'));
+  const gut = $('#gutter');
+  const setPW = (w) => { w = Math.max(300, Math.min(560, Math.round(w))); root.style.setProperty('--panel-w', `${w}px`); gut.setAttribute('aria-valuenow', String(w)); layout(); };
+  gut.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    const move = (ev) => setPW(stage.getBoundingClientRect().right - ev.clientX);
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  });
+  gut.addEventListener('keydown', (e) => { const c = Number(gut.getAttribute('aria-valuenow')); if (e.key === 'ArrowLeft') setPW(c + 20); if (e.key === 'ArrowRight') setPW(c - 20); });
+
+  // ---- Tabla redimensionable (ratón y teclado) ----
+  const rz = el('button', { class: 'g-resize', type: 'button', role: 'separator', 'aria-orientation': 'vertical', 'aria-label': 'Ancho de la columna Tarea', 'aria-valuemin': '140', 'aria-valuemax': '420', 'aria-valuenow': String(prefs.get('nameW')), 'data-tip': 'Arrastra o usa ← → para cambiar el ancho de la tabla' });
+  $('#gantt .g-gridhead').append(rz);
+  const setNW = (w, persist) => { w = Math.max(140, Math.min(420, Math.round(w))); root.style.setProperty('--name-w', `${w}px`); rz.setAttribute('aria-valuenow', String(w)); if (persist) prefs.save({ nameW: w }); layout(); };
+  rz.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    const x0 = e.clientX, w0 = Number(rz.getAttribute('aria-valuenow'));
+    const move = (ev) => setNW(w0 + ev.clientX - x0, false);
+    const up = () => { setNW(Number(rz.getAttribute('aria-valuenow')), true); window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  });
+  rz.addEventListener('keydown', (e) => { const c = Number(rz.getAttribute('aria-valuenow')); if (e.key === 'ArrowLeft') { e.preventDefault(); setNW(c - 16, true); } if (e.key === 'ArrowRight') { e.preventDefault(); setNW(c + 16, true); } });
+
+  // ---- Navegación, densidad, pantalla completa ----
+  const navBtn = $('#nav-btn');
+  const syncNav = () => navBtn.setAttribute('aria-expanded', String(mobile ? body.classList.contains('nav-abierta-movil') : !body.classList.contains('nav-plegada') && !body.classList.contains('vista-completa')));
+  navBtn.addEventListener('click', () => {
+    if (mobile) body.classList.toggle('nav-abierta-movil');
+    else { body.classList.toggle('nav-plegada'); prefs.save({ nav: body.classList.contains('nav-plegada') ? 'plegada' : 'abierta' }); }
+    syncNav(); layout();
+  });
+  const setDensity = (d) => { root.dataset.density = d; prefs.save({ density: d }); pressed('button[data-density]', 'density', d); g.render(); layout(); };
+  for (const b of document.querySelectorAll('button[data-density]')) b.addEventListener('click', () => setDensity(b.dataset.density));
+  pressed('button[data-density]', 'density', root.dataset.density);
+  const fsBtn = $('#fs-btn');
+  const setFull = (on) => {
+    body.classList.toggle('vista-completa', on);
+    fsBtn.setAttribute('aria-pressed', String(on));
+    fsBtn.querySelector('.i').className = `i i-${on ? 'minimize-2' : 'maximize-2'}`;
+    if (on && !document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => { /* sin permiso: queda el modo de la aplicación */ });
+    if (!on && document.fullscreenElement) document.exitFullscreen?.();
+    syncNav(); layout();
+  };
+  fsBtn.addEventListener('click', () => setFull(!body.classList.contains('vista-completa')));
+  document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && body.classList.contains('vista-completa')) setFull(false); });
+  setFull(body.classList.contains('vista-completa'));
+
+  // ---- Controles compartidos ----
+  const sel = $('#f-resp');
+  for (const [k, p] of Object.entries(DEMO.people)) sel.append(el('option', { value: k }, p.name));
+  sel.addEventListener('change', () => g.filter({ resp: sel.value }));
+  $('#f-q').addEventListener('input', (e) => g.filter({ q: e.target.value }));
+  for (const b of document.querySelectorAll('button[data-status]')) b.addEventListener('click', () => b.setAttribute('aria-pressed', String(g.toggleStatus(b.dataset.status))));
+  const setZoom = (z) => { g.zoom(z); prefs.save({ zoom: z }); pressed('button[data-zoom]', 'zoom', z); };
+  for (const b of document.querySelectorAll('button[data-zoom]')) b.addEventListener('click', () => setZoom(b.dataset.zoom));
+  pressed('button[data-zoom]', 'zoom', prefs.get('zoom'));
+  const tog = (k) => { const v = g.toggle(k); $(`button[data-toggle="${k}"]`).setAttribute('aria-pressed', String(v)); };
+  for (const b of document.querySelectorAll('button[data-toggle]')) b.addEventListener('click', () => tog(b.dataset.toggle));
+  $('[data-today]').addEventListener('click', () => g.today());
+  const keys = $('#keys'), kb = $('#keys-btn');
+  kb.addEventListener('click', () => { keys.hidden = !keys.hidden; kb.setAttribute('aria-expanded', String(!keys.hidden)); });
+  document.addEventListener('keydown', (e) => {
+    if (e.target.closest('input, select, textarea, dialog, [role="separator"]') || e.ctrlKey || e.metaKey || e.altKey) return;
+    const map = { 1: () => setZoom('dia'), 2: () => setZoom('semana'), 3: () => setZoom('mes'), c: () => tog('critical'), b: () => tog('baseline'), t: () => g.today(),
+      d: () => setDensity(root.dataset.density === 'compacta' ? 'estandar' : 'compacta'), p: () => setPanel({ dock: 'float', float: 'closed', closed: 'dock' }[pref]),
+      f: () => setFull(!body.classList.contains('vista-completa')), '[': () => navBtn.click(), '?': () => kb.click(),
+      Escape: () => { if (!keys.hidden) kb.click(); else if (stage.dataset.mode === 'float' && pref !== 'float') setPanel('closed', false); } };
+    map[e.key]?.();
+  });
+
+  // ---- Pantallas pequeñas: lista de lectura y ficha a pantalla completa ----
+  const mlist = $('#mlist');
+  mlist.append(el('p', { class: 'note' }, 'Vista de lectura. El cronograma completo está disponible en pantallas más anchas; los cambios se hacen desde la ficha.'));
+  for (const id of DEMO.order.filter((x) => !DEMO.meta[x].parent)) {
+    mlist.append(el('h3', {}, `${id} · ${DEMO.meta[id].name}`));
+    const leaves = DEMO.order.filter((x) => x.startsWith(`${id}.`) && DEMO.meta[x].kind !== 'group');
+    for (const lid of leaves) {
+      const m = DEMO.meta[lid], t = DEMO.plan.tasks[lid];
+      mlist.append(el('button', { type: 'button', onclick: () => g.select(lid, false) },
+        el('span', { class: 'g-code' }, lid), el('span', { class: 'nm' }, m.name),
+        el('span', { class: 'meta' }, `${fmtShort(t.start)} – ${fmtShort(t.finish)} · ${STATUS[m.status] ?? ''}${DEMO.plan.conflicts.some((c) => c.successorId === lid) ? ' · conflicto' : ''}`),
+        t.totalFloat == null ? el('span') : el('span', { class: `fl ${t.totalFloat < 0 ? 'neg' : t.totalFloat === 0 ? 'zero' : 'pos'}` }, el('span', { class: 'num' }, `${signed(t.totalFloat)} d`))));
+    }
+  }
+  const mq = matchMedia('(max-width: 760px)');
+  const applyMobile = () => { mobile = mq.matches; body.classList.toggle('movil', mobile); if (!mobile) { delete stage.dataset.sheet; body.classList.remove('nav-abierta-movil'); } syncNav(); layout(); };
+  mq.addEventListener('change', applyMobile);
+  applyMobile();
+
+  const pre = q.get('task');
+  if (pre && DEMO.meta[pre]) g.select(pre, !mobile); else if (!mobile) layout();
+  requestAnimationFrame(() => { layout(); g.today(); });
+}
+</script>
+</body>
+</html>

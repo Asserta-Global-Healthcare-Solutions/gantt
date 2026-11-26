@@ -7,6 +7,8 @@ import { el, icon, avatar, fmtShort, fmtMonth, fmtWeekday, fmtStamp, isoWeek, to
 const SVGNS = 'http://www.w3.org/2000/svg';
 const svg = (tag, attrs = {}) => { const n = document.createElementNS(SVGNS, tag); for (const [k, v] of Object.entries(attrs)) if (v != null) n.setAttribute(k, v); return n; };
 
+const val = (v) => (typeof v === 'function' ? v() : v);
+
 export function mountGantt(root, DEMO, cfg) {
   const { people, meta, order, baseline } = DEMO;
   const cal = makeCalendar(DEMO.calendar, DEMO.project.startDate);
@@ -56,8 +58,8 @@ export function mountGantt(root, DEMO, cfg) {
   const scroller = el('div', { class: 'g-scroll', tabindex: '-1' });
   const head = el('div', { class: 'g-head' });
   // Cabecera visual fuera del treegrid (sticky); para lectores de pantalla se repite dentro como fila oculta.
-  const gridHead = el('div', { class: 'g-gridhead', 'aria-hidden': 'true' },
-    ...cfg.columns.map((c) => el('div', { class: `g-hc g-c-${c.key}` }, c.label)));
+  const gridHead = el('div', { class: 'g-gridhead' },
+    ...cfg.columns.map((c) => el('div', { class: `g-hc g-c-${c.key}`, 'aria-hidden': 'true' }, c.label)));
   const srHead = () => el('div', { class: 'sr-only', role: 'row' }, ...cfg.columns.map((c) => el('span', { role: 'columnheader' }, c.longLabel ?? c.label)));
   const ruler = el('div', { class: 'g-ruler', 'aria-hidden': 'true' });
   head.append(gridHead, ruler);
@@ -70,7 +72,7 @@ export function mountGantt(root, DEMO, cfg) {
 
   // ---------- Render ----------
   function render() {
-    const rows = visibleRows(), rowH = cfg.rowH, W = width(), plan = cur();
+    const rows = visibleRows(), rowH = val(cfg.rowH), W = width(), plan = cur();
     root.style.setProperty('--lane-w', `${W}px`);
     root.dataset.scale = S.zoom;
     root.classList.toggle('show-critical', S.critical);
@@ -151,7 +153,7 @@ export function mountGantt(root, DEMO, cfg) {
       prog: el('span', { class: 'num' }, `${t.progress ?? 0}%`),
     };
     const row = el('div', {
-      class: `g-row k-${m.kind} c-${t.class}${t.critical ? ' is-crit' : ''}${S.selected === id ? ' is-sel' : ''}${changed ? ' is-changed' : ''}`,
+      class: `g-row k-${m.kind} c-${t.class}${t.critical ? ' is-crit' : ''}${S.selected === id ? ' is-sel' : ''}${changed ? ' is-changed' : ''}`, 'data-status': m.status,
       role: 'row', 'aria-level': level, 'aria-expanded': kids ? String(!S.collapsed.has(id)) : null, 'aria-selected': String(S.selected === id),
       tabindex: (S.selected ?? visibleRows()[0]?.id) === id ? '0' : '-1', 'data-id': id, style: `--lvl:${level}`,
       onclick: () => select(id, true), onkeydown: (e) => rowKey(e, id),
@@ -160,13 +162,14 @@ export function mountGantt(root, DEMO, cfg) {
   }
   function floatCell(t) {
     const f = t.totalFloat, cap = 10, w = Math.min(Math.abs(f), cap) / cap * 100;
-    return el('span', { class: `fl ${f < 0 ? 'neg' : f === 0 ? 'zero' : 'pos'}`, title: `Holgura total ${signed(f)} días laborables` },
+    const why = f < 0 ? 'Negativa: llega tarde a una fecha fijada manualmente.' : f === 0 ? 'Ruta crítica: cualquier retraso mueve el fin del proyecto.' : 'Puede retrasarse esos días sin mover el fin del proyecto.';
+    return el('span', { class: `fl ${f < 0 ? 'neg' : f === 0 ? 'zero' : 'pos'}`, 'data-tip': `Holgura total ${signed(f)} días laborables. ${why}` },
       el('i', { style: `--w:${w}%` }), el('span', { class: 'num' }, signed(f)));
   }
 
   function bar(id, top, plan) {
     const m = meta[id], t = plan.tasks[id];
-    const wrap = el('div', { class: `g-item k-${m.kind} c-${t.class}${t.critical ? ' is-crit' : ''}${S.selected === id ? ' is-sel' : ''}${S.preview?.changed.has(id) ? ' is-changed' : ''}`, style: `top:${top}px`, 'data-id': id });
+    const wrap = el('div', { class: `g-item k-${m.kind} c-${t.class}${t.critical ? ' is-crit' : ''}${S.selected === id ? ' is-sel' : ''}${S.preview?.changed.has(id) ? ' is-changed' : ''}`, style: `top:${top}px`, 'data-id': id, 'data-status': m.status });
     const b = baseline.tasks[id];
     if (b && m.kind !== 'group') {
       const bx = xOf(b.start), bw = m.kind === 'milestone' ? 0 : xOf(b.finish) + px() - bx;
@@ -186,7 +189,7 @@ export function mountGantt(root, DEMO, cfg) {
       body.append(el('i', { class: 'g-prog', style: `width:${t.progress ?? 0}%` }));
       if (t.class === 'FACT_RUNNING') body.append(el('i', { class: 'g-actual', style: `width:${Math.max(0, Math.min(w, xOf(DEMO.today) - x))}px` }));
     }
-    const inside = cfg.labelInside && w > m.name.length * 6.4 + 16 && m.kind === 'task';
+    const inside = val(cfg.labelInside) && w > m.name.length * 6.4 + 16 && m.kind === 'task';
     body.append(el('span', { class: `g-blabel${inside ? ' in' : ' out'}`, style: inside ? null : `left:${w + 8}px` }, cfg.barLabel(m, t, people)));
     if (draggable) {
       body.addEventListener('pointerdown', (e) => startDrag(e, id, 'move'));
@@ -203,8 +206,8 @@ export function mountGantt(root, DEMO, cfg) {
   function select(id, focus) {
     S.selected = id;
     render();
+    cfg.onSelect?.(id); // primero los efectos de la página (abrir panel), después el foco, para no perderlo
     if (focus) grid.querySelector(`[data-id="${CSS.escape(id)}"]`)?.focus({ preventScroll: false });
-    cfg.onSelect?.(id);
   }
   function toggle(id) { S.collapsed.has(id) ? S.collapsed.delete(id) : S.collapsed.add(id); render(); grid.querySelector(`[data-id="${CSS.escape(id)}"]`)?.focus(); }
   function rowKey(e, id) {
